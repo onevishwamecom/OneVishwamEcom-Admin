@@ -1,0 +1,200 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import Swal from 'sweetalert2';
+import { adminApi } from '../../../api/adminData';
+import cache, { adminNamespace, CACHE_TTL } from '../../../services/cache/cacheService';
+import { getCategoryById } from '../../../mock/categories';
+import { COMMON_FIELDS } from './constants';
+
+function showToast(title, text) {
+  Swal.fire({
+    icon: 'success',
+    title,
+    text,
+    timer: 1600,
+    showConfirmButton: false,
+    toast: true,
+    position: 'top-end',
+  });
+}
+
+function showErrorToast(title, text) {
+  Swal.fire({
+    icon: 'error',
+    title,
+    text,
+    timer: 2000,
+    showConfirmButton: false,
+    toast: true,
+    position: 'top-end',
+  });
+}
+
+function buildOverrideForm(base) {
+  return Object.fromEntries(COMMON_FIELDS.map((f) => [f.key, base[f.key] ?? '']));
+}
+
+export default function useListingReview() {
+  const { type, id } = useParams();
+  const ns = adminNamespace();
+  const listingKey = `listing:${type}:${id}`;
+
+  const [listing, setListing] = useState(() => {
+    const cached = cache.get(ns, listingKey);
+    return cached ? cached.data : null;
+  });
+  const [loading, setLoading] = useState(() => !cache.get(ns, listingKey));
+  const [error, setError] = useState(null);
+  const [contributors, setContributors] = useState([]);
+  const [activeModal, setActiveModal] = useState(null);
+  const [reason, setReason] = useState('');
+  const [overrideForm, setOverrideForm] = useState({});
+  const [overrideImages, setOverrideImages] = useState([]);
+  const overrideFileRef = useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setError(null);
+    // Show cached version instantly when navigating between listings.
+    const cached = cache.get(ns, listingKey);
+    setListing(cached ? cached.data : null);
+    Promise.all([
+      cache.fetch(ns, listingKey, () => adminApi.getListing(type, id), {
+        ttl: CACHE_TTL.detail,
+      }),
+      cache.fetch(ns, 'contributors', () => adminApi.getContributors(), {
+        ttl: CACHE_TTL.listings,
+      }),
+    ])
+      .then(([itemResult, contributorsResult]) => {
+        if (cancelled) return;
+        setListing(itemResult.data);
+        setContributors(contributorsResult.data);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [type, id, ns, listingKey]);
+
+  useEffect(() => {
+    if (listing) {
+      setOverrideForm(buildOverrideForm(listing));
+      setOverrideImages(Array.isArray(listing.images) ? [...listing.images] : []);
+    }
+  }, [listing]);
+
+  const contributor = useMemo(
+    () => contributors.find((c) => c.id === listing?.contributorId) || null,
+    [contributors, listing?.contributorId],
+  );
+  const contributorDetail = contributor;
+  const category = useMemo(() => getCategoryById(type), [type]);
+  const contributedCount = contributor?.totalListings || 0;
+
+  const startOverride = () => {
+    if (!listing) return;
+    setOverrideForm(buildOverrideForm(listing));
+    setOverrideImages(Array.isArray(listing.images) ? [...listing.images] : []);
+    setActiveModal('override');
+  };
+
+  const confirmApprove = async () => {
+    try {
+      const updated = await adminApi.updateListing(type, id, { status: 'approved' });
+      if (updated) {
+        setListing(updated);
+        showToast('Approved', 'Listing is now approved.');
+      }
+    } catch {
+      showErrorToast('Failed', 'Could not approve the listing.');
+    }
+    setActiveModal(null);
+  };
+
+  const confirmAlterations = async () => {
+    const comment = reason.trim();
+    if (!comment) return;
+    try {
+      const updated = await adminApi.updateListing(type, id, {
+        status: 'changes-required',
+        adminComment: comment,
+      });
+      if (updated) {
+        setListing(updated);
+        showToast('Request Sent', 'Contributor will be asked to update the listing.');
+      }
+    } catch {
+      showErrorToast('Failed', 'Could not request alterations.');
+    }
+    setReason('');
+    setActiveModal(null);
+  };
+
+  const confirmCancel = async () => {
+    const r = reason.trim();
+    if (!r) return;
+    try {
+      const updated = await adminApi.updateListing(type, id, {
+        status: 'cancelled',
+        adminComment: r,
+      });
+      if (updated) {
+        setListing(updated);
+        showToast('Listing Cancelled', 'The listing is hidden and marked cancelled.');
+      }
+    } catch {
+      showErrorToast('Failed', 'Could not cancel the listing.');
+    }
+    setReason('');
+    setActiveModal(null);
+  };
+
+  const confirmOverride = async () => {
+    const payload = { ...overrideForm, images: overrideImages };
+    try {
+      const updated = await adminApi.updateListing(type, id, payload);
+      if (updated) {
+        setListing(updated);
+        showToast('Override Saved', 'Listing information has been overridden.');
+      }
+    } catch {
+      showErrorToast('Failed', 'Could not save the override.');
+    }
+    setActiveModal(null);
+  };
+
+  const images = Array.isArray(listing?.images) ? listing.images : [];
+
+  return {
+    type,
+    id,
+    listing,
+    loading,
+    error,
+    images,
+    activeModal,
+    setActiveModal,
+    reason,
+    setReason,
+    overrideForm,
+    setOverrideForm,
+    overrideImages,
+    setOverrideImages,
+    overrideFileRef,
+    contributor,
+    contributorDetail,
+    category,
+    contributedCount,
+    startOverride,
+    confirmApprove,
+    confirmAlterations,
+    confirmCancel,
+    confirmOverride,
+  };
+}
