@@ -15,6 +15,7 @@ const COLUMNS = [
 
 function renderListingRow(l, contributorName, category, isUnseen, onOpenListing) {
   const unseen = isUnseen(l._id || l.id);
+  const title = l.title || l.name || l.brand || 'Untitled';
   return [
     /* Listing title + inline view link */
     <td key="listing">
@@ -24,7 +25,7 @@ function renderListingRow(l, contributorName, category, isUnseen, onOpenListing)
         className={`group/link font-medium hover:text-brand-blue transition-colors ${
           unseen ? 'text-brand-blue font-semibold' : 'text-slate-800'
         }`}
-        title={l.title}
+        title={title}
       >
         {unseen && (
           <span className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-brand-blue/10 text-brand-blue border border-brand-blue/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
@@ -33,11 +34,11 @@ function renderListingRow(l, contributorName, category, isUnseen, onOpenListing)
           </span>
         )}
         <span className="block">
-          {l.title.length > 40 ? `${l.title.substring(0, 40)}…` : l.title}
+          {title.length > 40 ? `${title.substring(0, 40)}…` : title}
         </span>
         <span className="flex items-center gap-2 mt-0.5">
           <span className="text-[9px] font-normal text-slate-400">{l._id}</span>
-          
+           
         </span>
       </Link>
     </td>,
@@ -89,11 +90,16 @@ export default function ListingsTable({
 
   const searchLower = searchQuery.toLowerCase();
   const filtered = listings.filter(
-    (l) =>
-      l.title?.toLowerCase().includes(searchLower) ||
-      contributorNameById[l.contributorId]?.toLowerCase().includes(searchLower) ||
-      categoryById[l._type]?.label?.toLowerCase().includes(searchLower) ||
-      l.location?.toLowerCase().includes(searchLower),
+    (l) => {
+      const title = (l.title || l.name || l.brand || '').toLowerCase();
+      const contributor = (contributorNameById[l.contributorId] || l.lister?.name || '').toLowerCase();
+      const catLabel = (categoryById[l._type]?.label || l._type || '').toLowerCase();
+      const location = (l.location || l.area || l.city || '').toLowerCase();
+      return title.includes(searchLower) ||
+        contributor.includes(searchLower) ||
+        catLabel.includes(searchLower) ||
+        location.includes(searchLower);
+    },
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
