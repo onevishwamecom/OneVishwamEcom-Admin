@@ -170,7 +170,7 @@ async function updateListing(type, id, updates) {
   if (updates.status === 'changes-required') return requestChanges(type, id, updates.reason);
   if (updates.status === 'cancelled' || updates.status === 'rejected') return cancelListing(type, id, updates.reason);
   const item = unwrap(
-    await client.put(`/admin/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}/status`, updates),
+    await client.put(`/admin/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}`, updates),
   );
   invalidateDataCaches();
   return item?.item ? normalizeListing(item.item) : null;

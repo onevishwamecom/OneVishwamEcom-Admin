@@ -16,18 +16,18 @@
  */
 
 const STORAGE_PREFIX = 'onevishwam_cache';
-const CACHE_VERSION = 2; // bumped from 1 → invalidates all old cached mock data
+const CACHE_VERSION = 3; // bumped to invalidate stale cached listing data
 
 /** Configurable freshness lifetimes (ms) — tune per data type, never hardcode. */
 export const CACHE_TTL = {
   user: 30 * 60 * 1000, // 30 min — profile, revalidated after login
-  dashboard: 5 * 60 * 1000, // 5 min — admin stats
-  listings: 10 * 60 * 1000, // 10 min — listing collections / lists
+  dashboard: 30 * 1000, // 30 sec — admin stats (short TTL, always revalidates)
+  listings: 30 * 1000, // 30 sec — admin listing collections (short TTL for fresh data)
   products: 10 * 60 * 1000, // 10 min — public listing collections
-  detail: 10 * 60 * 1000, // 10 min — single listing / profile detail
+  detail: 30 * 1000, // 30 sec — single listing detail (short TTL for admin review)
   similar: 10 * 60 * 1000, // 10 min — "similar items"
   categories: 60 * 60 * 1000, // 1 hr — relatively static metadata
-  activity: 5 * 60 * 1000, // 5 min — audit trail
+  activity: 30 * 1000, // 30 sec — audit trail (short TTL)
 };
 
 export const PUBLIC_NAMESPACE = 'public';
