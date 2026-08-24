@@ -1,5 +1,5 @@
 import AdminModal from '../../../../components/Admin/AdminModal';
-import { COMMON_FIELDS, SUBCATEGORIES, CATEGORY_SPECIFIC_FIELDS, OVERRIDE_INPUT_CLASS } from '../constants';
+import { COMMON_FIELDS, SUBCATEGORIES, CATEGORY_SPECIFIC_FIELDS, PRICE_UNITS, PRICE_SUFFIXES_BY_CATEGORY, OVERRIDE_INPUT_CLASS } from '../constants';
 
 export default function OverrideModal({
   open,
@@ -132,19 +132,40 @@ export default function OverrideModal({
             <i className="fa-solid fa-tag text-brand-gold" />
             Pricing & Commercials
           </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label htmlFor="override-price" className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
                 Price (₹) <span className="text-red-500">*</span>
               </label>
-              <input
-                id="override-price"
-                type="text"
-                value={overrideForm.price ?? ''}
-                onChange={(e) => setOverrideForm((prev) => ({ ...prev, price: e.target.value }))}
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-slate-400 font-bold text-sm">₹</span>
+                </div>
+                <input
+                  id="override-price"
+                  type="text"
+                  value={overrideForm.price ?? ''}
+                  onChange={(e) => setOverrideForm((prev) => ({ ...prev, price: e.target.value }))}
+                  className={`${OVERRIDE_INPUT_CLASS} pl-8`}
+                  placeholder="e.g. 4.5"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="override-priceUnit" className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                Unit
+              </label>
+              <select
+                id="override-priceUnit"
+                value={overrideForm.priceUnit || 'exact'}
+                onChange={(e) => setOverrideForm((prev) => ({ ...prev, priceUnit: e.target.value }))}
                 className={OVERRIDE_INPUT_CLASS}
-                placeholder="e.g. 5000000"
-              />
+              >
+                {PRICE_UNITS.map((u) => (
+                  <option key={u.value} value={u.value}>{u.label}</option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -169,14 +190,16 @@ export default function OverrideModal({
               <label htmlFor="override-priceSuffix" className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
                 Price Suffix
               </label>
-              <input
+              <select
                 id="override-priceSuffix"
-                type="text"
                 value={overrideForm.priceSuffix || ''}
                 onChange={(e) => setOverrideForm((prev) => ({ ...prev, priceSuffix: e.target.value }))}
                 className={OVERRIDE_INPUT_CLASS}
-                placeholder="e.g. / month, Cr"
-              />
+              >
+                {(PRICE_SUFFIXES_BY_CATEGORY[typeKey] || ['', '/ month', '/ year', 'Onwards']).map((s) => (
+                  <option key={s} value={s}>{s || '(None)'}</option>
+                ))}
+              </select>
             </div>
           </div>
         </div>

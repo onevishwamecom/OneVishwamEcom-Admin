@@ -213,5 +213,27 @@ export const CATEGORY_SPECIFIC_FIELDS = {
   ],
 };
 
+export const PRICE_UNITS = [
+  { value: 'exact', label: '₹ (Exact Amount)', multiplier: 1 },
+  { value: 'thousand', label: 'Thousands (K)', multiplier: 1000 },
+  { value: 'lakh', label: 'Lakhs (L)', multiplier: 100000 },
+  { value: 'crore', label: 'Crores (Cr)', multiplier: 10000000 },
+];
+
+export const PRICE_SUFFIXES_BY_CATEGORY = {
+  properties: ['', '/ Sq. Ft.', '/ month', '/ year', 'Onwards'],
+  'real-estate': ['', '/ Sq. Ft.', '/ month', '/ year', 'Onwards'],
+  vehicles: ['', 'Onwards', 'EMI Available'],
+  vehicle: ['', 'Onwards', 'EMI Available'],
+  groceries: ['', '/ kg', '/ piece', '/ pack', '/ liter', '/ dozen'],
+  grocery: ['', '/ kg', '/ piece', '/ pack', '/ liter', '/ dozen'],
+  garments: ['', 'Onwards', '/ piece'],
+  garment: ['', 'Onwards', '/ piece'],
+  jewellery: ['', '/ gram', '/ piece', '+ Making Charges'],
+  finance: ['', '% p.a.', '/ year'],
+  services: ['', '/ visit', '/ hour', '/ job'],
+  service: ['', '/ visit', '/ hour', '/ job'],
+};
+
 export const OVERRIDE_INPUT_CLASS =
   'w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm outline-none focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/10 focus:bg-white transition-all';
