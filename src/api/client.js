@@ -71,7 +71,7 @@ client.interceptors.response.use(
 
       try {
         const { data } = await axios.post(
-          `${client.defaults.baseURL}/auth/refresh`,
+          `${client.defaults.baseURL}/admin/auth/refresh`,
           { refreshToken },
           { headers: { 'Content-Type': 'application/json' } }
         );

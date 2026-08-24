@@ -1,21 +1,7 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, createAction } from '@reduxjs/toolkit';
 import { useSelector, useDispatch } from 'react-redux';
-import { ADMIN_AUTH } from '../config/adminAuth';
+import client from '../api/client';
 import cache, { adminNamespace } from '../services/cache/cacheService';
-
-/**
- * PHASE 1 — PROTOTYPE ADMIN SESSION (FRONTEND-ONLY).
- * ============================================================================
- * Temporary admin authentication. A single administrator is configured in
- * `src/config/adminAuth.js`.
- *
- * TODO:
- * Replace prototype authentication with secure backend authentication before
- * production. When the backend exists this slice should call:
- *     POST /admin/auth/login    (via the isolated `src/api` layer)
- * and validate the returned JWT / session server-side.
- * ============================================================================
- */
 
 const SESSION_KEY = 'wvz_admin_session';
 
@@ -28,43 +14,57 @@ function readStoredSession() {
   }
 }
 
+function writeStoredSession(session) {
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+}
+
 function clearStoredSession() {
   localStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
 }
 
 export const adminLoginUser = createAsyncThunk(
   'admin/login',
   async ({ email, password }, { rejectWithValue }) => {
-    const normalizedEmail = String(email || '').trim().toLowerCase();
-
-    if (normalizedEmail !== ADMIN_AUTH.email) {
-      return rejectWithValue('Invalid administrator credentials');
+    try {
+      const { data } = await client.post('/admin/auth/login', { email, password });
+      const { accessToken, refreshToken, admin } = data.data;
+      localStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
+      const session = { ...admin, loggedInAt: new Date().toISOString() };
+      writeStoredSession(session);
+      return session;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Invalid admin credentials');
     }
-    if (
-      typeof password !== 'string' ||
-      password.length < ADMIN_AUTH.minPasswordLength ||
-      password !== ADMIN_AUTH.password
-    ) {
-      return rejectWithValue('Invalid administrator credentials');
-    }
-
-    const session = {
-      email: ADMIN_AUTH.email,
-      name: ADMIN_AUTH.displayName,
-      role: 'admin',
-      loggedInAt: new Date().toISOString(),
-    };
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-    return session;
   },
 );
+
+export const adminFetchMe = createAsyncThunk(
+  'admin/fetchMe',
+  async (_, { rejectWithValue }) => {
+    try {
+      const { data } = await client.get('/admin/auth/me');
+      return data.data.admin;
+    } catch (err) {
+      if (err.response?.status === 401) {
+        const token = localStorage.getItem('accessToken');
+        if (token) return rejectWithValue('TOKEN_EXPIRED');
+      }
+      return rejectWithValue(err.response?.data?.message || 'Session expired');
+    }
+  },
+);
+
+export const adminLogoutAction = createAction('admin/forceLogout');
 
 const storedSession = readStoredSession();
 
 const adminSlice = createSlice({
   name: 'admin',
   initialState: {
-    isAdminLoggedIn: !!storedSession,
+    isAdminLoggedIn: Boolean(storedSession && localStorage.getItem('accessToken')),
     admin: storedSession,
     loading: false,
     error: null,
@@ -95,6 +95,35 @@ const adminSlice = createSlice({
       .addCase(adminLoginUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(adminFetchMe.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(adminFetchMe.fulfilled, (state, action) => {
+        state.loading = false;
+        state.admin = { ...state.admin, ...action.payload };
+        state.isAdminLoggedIn = true;
+        writeStoredSession({ ...state.admin, ...action.payload });
+      })
+      .addCase(adminFetchMe.rejected, (state, action) => {
+        state.loading = false;
+        if (action.payload === 'TOKEN_EXPIRED') {
+          state.error = null;
+        } else {
+          state.error = action.payload;
+        }
+        if (!localStorage.getItem('accessToken')) {
+          state.isAdminLoggedIn = false;
+          state.admin = null;
+          clearStoredSession();
+        }
+      })
+      .addCase(adminLogoutAction, (state) => {
+        state.isAdminLoggedIn = false;
+        state.admin = null;
+        state.error = null;
+        clearStoredSession();
+        cache.clearNamespace(adminNamespace());
       });
   },
 });
@@ -111,6 +140,7 @@ export function useAdminAuth() {
     error: useSelector((s) => s.admin.error),
     login: (credentials) => dispatch(adminLoginUser(credentials)),
     logout: () => dispatch(adminLogout()),
+    fetchMe: () => dispatch(adminFetchMe()),
     clearError: () => dispatch(adminClearError()),
   };
 }
