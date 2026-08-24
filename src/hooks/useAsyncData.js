@@ -71,8 +71,8 @@ export default function useAsyncData(loader, deps = [], fallback = null, options
 
     const record = cache.get(ns, cacheKey);
 
-    // Show whatever we have immediately — cached data (or the previous state
-    // when forced) keeps the page usable during any refetch.
+    // Show whatever we have immediately — cached data keeps the page usable
+    // during any refetch.
     if (record) {
       setData(record.data);
       setLoading(false);
@@ -83,8 +83,20 @@ export default function useAsyncData(loader, deps = [], fallback = null, options
       setError(null);
     }
 
-    // Fresh and not a forced refresh → nothing to fetch.
+    // Fresh cache and not a forced refresh → still do a background revalidation
+    // so data stays current (e.g. lister edits from another portal).
+    // Only skip the network if this is an explicit no-fetch scenario.
     if (record && !force && cache.isValid(ns, cacheKey, ttl)) {
+      // Background revalidation: fetch fresh data without showing skeleton
+      cache
+        .fetch(ns, cacheKey, () => loaderRef.current(), { force: true, ttl })
+        .then(({ data: fresh }) => {
+          if (cancelled) return;
+          setData(fresh);
+        })
+        .catch(() => {
+          // Background revalidation failed — keep showing cached data
+        });
       return () => {
         cancelled = true;
       };

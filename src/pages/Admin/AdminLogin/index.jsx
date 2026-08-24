@@ -17,9 +17,7 @@ function AdminLogin() {
   function validate() {
     const e = {};
     if (!form.email.trim()) e.email = 'Email is required';
-    else if (String(form.email).trim().toLowerCase() !== ADMIN_AUTH.email) {
-      e.email = 'Invalid administrator email';
-    }
+    else if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) e.email = 'Please enter a valid email';
     if (!form.password) e.password = 'Password is required';
     return e;
   }

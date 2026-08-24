@@ -1,6 +1,7 @@
 import { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useAdminAuth } from './store/adminSlice';
+import { useAdminAuth, adminFetchMe } from './store/adminSlice';
+import store from './store';
 import BrandLoader from './components/ui/BrandLoader';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -35,6 +36,20 @@ function ScrollToTop() {
 }
 
 function App() {
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    const session = localStorage.getItem('wvz_admin_session');
+    if (token && session) {
+      store.dispatch(adminFetchMe());
+    }
+
+    const handleForceLogout = () => {
+      window.location.href = '/admin/login';
+    };
+    window.addEventListener('auth:logout', handleForceLogout);
+    return () => window.removeEventListener('auth:logout', handleForceLogout);
+  }, []);
+
   return (
     <>
       <ScrollToTop />

@@ -1,18 +1,7 @@
 import client from './client';
 import cache, { adminNamespace } from '../services/cache/cacheService';
-import { CATEGORIES, typeKeyOf } from '../mock/categories';
+import { CATEGORIES } from '../mock/categories';
 
-/**
- * Admin data-access layer — serves data from the OneVishwam dummy API.
- * ============================================================================
- * All admin data comes from the shared dummy server (`server/dummy-api.mjs`,
- * persisted in `server/db.json`). In development the Vite proxy forwards
- * `/api` to http://localhost:5002; for other environments set
- * VITE_API_BASE_URL (e.g. the deployed API origin).
- * ============================================================================
- */
-
-/** Deduplicate identical concurrent GETs (e.g. getCategories -> getListings). */
 const inFlight = new Map();
 
 function dedupe(key, fn) {
@@ -23,7 +12,15 @@ function dedupe(key, fn) {
 }
 
 export function listingType(category) {
-  return typeKeyOf(category) || 'properties';
+  const map = {
+    'real-estate': 'properties',
+    vehicle: 'vehicles',
+    grocery: 'groceries',
+    garment: 'garments',
+    jewellery: 'jewellery',
+    finance: 'finance',
+  };
+  return map[category] || 'properties';
 }
 
 function normalizeListing(item) {
@@ -36,85 +33,98 @@ function unwrap(response) {
   return body && body.success !== undefined ? body.data : body;
 }
 
+function flattenResults(data) {
+  if (!data?.results) return [];
+  const all = [];
+  for (const [type, items] of Object.entries(data.results)) {
+    if (Array.isArray(items)) {
+      items.forEach((item) => all.push({ ...item, _type: type }));
+    }
+  }
+  return all;
+}
+
 async function getStats() {
-  return dedupe('stats', () => client.get('/admin/stats').then(unwrap));
+  return dedupe('stats', () => client.get('/admin/listings/stats').then(unwrap));
 }
 
 async function getContributors() {
   return dedupe('contributors', () =>
-    client.get('/contributors').then(unwrap).then((data) => data || []),
+    client.get('/admin/contributors').then(unwrap).then((data) => data?.contributors || []),
   );
 }
 
 async function getContributorDetail(id) {
   return dedupe(`contributor:${id}`, async () => {
-    const data = unwrap(await client.get(`/contributors/${encodeURIComponent(id)}`));
+    const data = unwrap(await client.get(`/admin/contributors/${encodeURIComponent(id)}`));
     if (!data) return null;
+    const items = [];
+    if (data.listings) {
+      for (const [type, arr] of Object.entries(data.listings)) {
+        if (Array.isArray(arr)) {
+          arr.forEach((item) => items.push({ ...item, _type: type }));
+        }
+      }
+    }
     return {
       ...data.contributor,
-      stats: data.stats || {},
-      items: (data.items || []).map(normalizeListing),
+      totalListings: data.totalListings || items.length,
+      items,
     };
   });
 }
 
 async function getListings() {
   return dedupe('listings', async () => {
-    const items = unwrap(await client.get('/listings', { params: { flatten: '1' } }));
-    return (items || []).map(normalizeListing);
+    const data = unwrap(await client.get('/admin/listings'));
+    return flattenResults(data).map(normalizeListing);
   });
 }
 
 async function getListing(type, id) {
   return dedupe(`listing:${type}:${id}`, async () => {
-    const item = unwrap(
-      await client.get(`/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}`),
+    const data = unwrap(
+      await client.get(`/admin/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}`),
     );
+    const item = data?.item;
     return item ? normalizeListing(item) : null;
   });
 }
 
 async function getCategories() {
-  const items = await getListings();
-  const byType = {};
-  items.forEach((item) => {
-    const stats = (byType[item._type] ||= {
-      total: 0,
-      pending: 0,
-      approved: 0,
-      changesRequired: 0,
-      cancelled: 0,
-    });
-    stats.total += 1;
-    if (item.status === 'pending') stats.pending += 1;
-    else if (item.status === 'approved') stats.approved += 1;
-    else if (item.status === 'changes-required') stats.changesRequired += 1;
-    else if (item.status === 'cancelled') stats.cancelled += 1;
+  const stats = await getStats();
+  const byType = stats?.byCategory || {};
+  return CATEGORIES.map((category) => {
+    const catStats = byType[category.id] || byType[listingType(category.id)] || {};
+    return {
+      id: category.id,
+      ...category,
+      total: catStats.total || 0,
+      pending: catStats.pending || 0,
+      approved: catStats.approved || 0,
+      changesRequired: catStats['changes-required'] || 0,
+      cancelled: catStats.cancelled || 0,
+    };
   });
-  return CATEGORIES.map((category) => ({
-    id: category.id,
-    ...category,
-    ...(byType[category.id] || {
-      total: 0,
-      pending: 0,
-      approved: 0,
-      changesRequired: 0,
-      cancelled: 0,
-    }),
-  }));
 }
 
 async function getActivity() {
   return dedupe('activity', async () => {
-    const items = unwrap(await client.get('/activity'));
-    return (items || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const items = await getListings();
+    return items
+      .map((item) => ({
+        _id: item._id,
+        _type: item._type,
+        title: item.title || item.name || 'Untitled',
+        status: item.status,
+        contributorName: item.lister?.name || 'Unknown',
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+      }))
+      .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
   });
 }
 
-/**
- * Any mutation that changes listing / category / dashboard data invalidates the
- * affected caches (never the whole localStorage). Keys are admin-scoped.
- */
 function invalidateDataCaches() {
   const ns = adminNamespace();
   [
@@ -125,25 +135,51 @@ function invalidateDataCaches() {
     'contributors',
     'categories',
     'activity',
+    'stats',
   ].forEach((key) => cache.remove(ns, key));
   cache.removeByPrefix(ns, 'listing:');
   cache.removeByPrefix(ns, 'contributor:');
 }
 
-async function updateListing(type, id, updates) {
+async function approveListing(type, id) {
   const item = unwrap(
-    await client.patch(`/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}`, updates),
+    await client.patch(`/admin/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}/approve`),
   );
   invalidateDataCaches();
-  return item ? normalizeListing(item) : null;
+  return item?.item ? normalizeListing(item.item) : null;
+}
+
+async function requestChanges(type, id, reason) {
+  const item = unwrap(
+    await client.patch(`/admin/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}/changes`, { reason }),
+  );
+  invalidateDataCaches();
+  return item?.item ? normalizeListing(item.item) : null;
+}
+
+async function cancelListing(type, id, reason) {
+  const item = unwrap(
+    await client.patch(`/admin/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}/cancel`, { reason }),
+  );
+  invalidateDataCaches();
+  return item?.item ? normalizeListing(item.item) : null;
+}
+
+async function updateListing(type, id, updates) {
+  if (updates.status === 'approved') return approveListing(type, id);
+  if (updates.status === 'changes-required') return requestChanges(type, id, updates.reason);
+  if (updates.status === 'cancelled' || updates.status === 'rejected') return cancelListing(type, id, updates.reason);
+  const item = unwrap(
+    await client.put(`/admin/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}`, updates),
+  );
+  invalidateDataCaches();
+  return item?.item ? normalizeListing(item.item) : null;
 }
 
 async function deleteListing(type, id) {
-  const removed = unwrap(
-    await client.delete(`/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}`),
-  );
+  await client.delete(`/admin/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}`);
   invalidateDataCaches();
-  return removed;
+  return true;
 }
 
 export const adminApi = {
@@ -152,6 +188,9 @@ export const adminApi = {
   getContributorDetail,
   getListings,
   getListing,
+  approveListing,
+  requestChanges,
+  cancelListing,
   updateListing,
   deleteListing,
   getCategories,

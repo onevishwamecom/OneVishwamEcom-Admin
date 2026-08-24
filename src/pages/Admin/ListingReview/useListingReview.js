@@ -4,7 +4,7 @@ import Swal from 'sweetalert2';
 import { adminApi } from '../../../api/adminData';
 import cache, { adminNamespace, CACHE_TTL } from '../../../services/cache/cacheService';
 import { getCategoryById } from '../../../mock/categories';
-import { COMMON_FIELDS } from './constants';
+import { COMMON_FIELDS, CATEGORY_SPECIFIC_FIELDS } from './constants';
 
 function showToast(title, text) {
   Swal.fire({
@@ -30,8 +30,22 @@ function showErrorToast(title, text) {
   });
 }
 
-function buildOverrideForm(base) {
-  return Object.fromEntries(COMMON_FIELDS.map((f) => [f.key, base[f.key] ?? '']));
+function buildOverrideForm(base, type) {
+  if (!base) return {};
+  const form = {};
+  COMMON_FIELDS.forEach((f) => {
+    form[f.key] = base[f.key] ?? '';
+  });
+  form.subcategory = base.subcategory || base.subCategory || '';
+  form.priceType = base.priceType || 'fixed';
+
+  const typeKey = type || base._type || base.category || 'properties';
+  const catFields = CATEGORY_SPECIFIC_FIELDS[typeKey] || CATEGORY_SPECIFIC_FIELDS[base.category] || [];
+  catFields.forEach((f) => {
+    form[f.key] = base[f.key] ?? '';
+  });
+
+  return form;
 }
 
 export default function useListingReview() {
@@ -84,14 +98,14 @@ export default function useListingReview() {
 
   useEffect(() => {
     if (listing) {
-      setOverrideForm(buildOverrideForm(listing));
+      setOverrideForm(buildOverrideForm(listing, type));
       setOverrideImages(Array.isArray(listing.images) ? [...listing.images] : []);
     }
-  }, [listing]);
+  }, [listing, type]);
 
   const contributor = useMemo(
-    () => contributors.find((c) => c.id === listing?.contributorId) || null,
-    [contributors, listing?.contributorId],
+    () => contributors.find((c) => (c._id || c.id) === (listing?.contributorId || listing?.lister?._id)) || null,
+    [contributors, listing?.contributorId, listing?.lister?._id],
   );
   const contributorDetail = contributor;
   const category = useMemo(() => getCategoryById(type), [type]);
@@ -99,7 +113,7 @@ export default function useListingReview() {
 
   const startOverride = () => {
     if (!listing) return;
-    setOverrideForm(buildOverrideForm(listing));
+    setOverrideForm(buildOverrideForm(listing, type));
     setOverrideImages(Array.isArray(listing.images) ? [...listing.images] : []);
     setActiveModal('override');
   };
