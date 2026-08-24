@@ -16,7 +16,7 @@
  */
 
 const STORAGE_PREFIX = 'onevishwam_cache';
-const CACHE_VERSION = 1;
+const CACHE_VERSION = 2; // bumped from 1 → invalidates all old cached mock data
 
 /** Configurable freshness lifetimes (ms) — tune per data type, never hardcode. */
 export const CACHE_TTL = {

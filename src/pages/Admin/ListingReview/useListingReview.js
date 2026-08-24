@@ -90,8 +90,8 @@ export default function useListingReview() {
   }, [listing]);
 
   const contributor = useMemo(
-    () => contributors.find((c) => c.id === listing?.contributorId) || null,
-    [contributors, listing?.contributorId],
+    () => contributors.find((c) => (c._id || c.id) === (listing?.contributorId || listing?.lister?._id)) || null,
+    [contributors, listing?.contributorId, listing?.lister?._id],
   );
   const contributorDetail = contributor;
   const category = useMemo(() => getCategoryById(type), [type]);

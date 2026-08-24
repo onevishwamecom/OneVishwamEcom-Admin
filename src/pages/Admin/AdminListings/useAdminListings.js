@@ -48,7 +48,7 @@ export default function useAdminListings() {
   );
 
   const contributorNameById = useMemo(
-    () => Object.fromEntries(contributors.map((c) => [c.id, c.name])),
+    () => Object.fromEntries(contributors.map((c) => [c._id || c.id, c.name])),
     [contributors],
   );
   const categoryById = useMemo(

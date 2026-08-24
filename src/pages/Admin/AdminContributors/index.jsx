@@ -161,7 +161,7 @@ function AdminContributors() {
       {/* Cards grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {contributors.map((c) => (
-          <div key={c.id} className="bg-white rounded-2xl border border-slate-100 shadow-card hover:shadow-card-hover hover-lift p-5">
+          <div key={c._id || c.id} className="bg-white rounded-2xl border border-slate-100 shadow-card hover:shadow-card-hover hover-lift p-5">
             <div className="flex items-center gap-4 mb-4">
               <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-brand-blue to-brand-blue/70 flex items-center justify-center text-white font-extrabold shadow-sm shrink-0">
                 {c.name.charAt(0).toUpperCase()}
