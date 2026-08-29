@@ -39,6 +39,7 @@ function ListingReview() {
     confirmAlterations,
     confirmCancel,
     confirmOverride,
+    confirmSoldOut,
   } = useListingReview();
 
   const { markAsRead } = useListingReadStatus();
@@ -99,9 +100,11 @@ function ListingReview() {
       </div>
 
       <AdminActions
+        listing={listing}
         setActiveModal={setActiveModal}
         setReason={setReason}
         startOverride={startOverride}
+        confirmSoldOut={confirmSoldOut}
       />
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">

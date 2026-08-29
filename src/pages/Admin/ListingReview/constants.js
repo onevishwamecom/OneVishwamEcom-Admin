@@ -23,22 +23,15 @@ export const COMMON_FIELDS = [
 
 export const SUBCATEGORIES = {
   properties: [
-    'Apartment',
+    'Flat',
     'Villa',
     'Plot',
-    'Commercial Property',
-    'PG / Co-living',
-    'Office Space',
-    'Warehouse',
   ],
   'real-estate': [
     'Apartment',
     'Villa',
     'Plot',
-    'Commercial Property',
-    'PG / Co-living',
-    'Office Space',
-    'Warehouse',
+    'Flat'
   ],
   vehicles: [
     'Car',
@@ -126,7 +119,6 @@ export const SUBCATEGORIES = {
 
 export const CATEGORY_SPECIFIC_FIELDS = {
   properties: [
-    { key: 'propertyType', label: 'Property Type', type: 'text', placeholder: 'e.g. Apartment, Villa' },
     { key: 'bhk', label: 'BHK', type: 'select', options: ['1 BHK', '2 BHK', '3 BHK', '4+ BHK', 'Studio'] },
     { key: 'bathrooms', label: 'Bathrooms', type: 'select', options: ['1', '2', '3', '4+'] },
     { key: 'area_sqft', label: 'Area (sq. ft.)', type: 'number', placeholder: 'e.g. 1500' },
@@ -139,7 +131,7 @@ export const CATEGORY_SPECIFIC_FIELDS = {
     { key: 'availableUnits', label: 'Available Units', type: 'number', placeholder: 'e.g. 5' },
   ],
   'real-estate': [
-    { key: 'propertyType', label: 'Property Type', type: 'text', placeholder: 'e.g. Apartment, Villa' },
+    { key: 'bhk', label: 'BHK', type: 'select', options: ['1 BHK', '2 BHK', '3 BHK', '4+ BHK', 'Studio'] },
     { key: 'bhk', label: 'BHK', type: 'select', options: ['1 BHK', '2 BHK', '3 BHK', '4+ BHK', 'Studio'] },
     { key: 'bathrooms', label: 'Bathrooms', type: 'select', options: ['1', '2', '3', '4+'] },
     { key: 'area_sqft', label: 'Area (sq. ft.)', type: 'number', placeholder: 'e.g. 1500' },

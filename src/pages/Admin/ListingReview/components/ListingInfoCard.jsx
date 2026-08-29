@@ -6,6 +6,14 @@ export default function ListingInfoCard({ listing, images, category }) {
   const typeKey = category?.id || listing?._type || listing?.category || 'properties';
   const catFields = CATEGORY_SPECIFIC_FIELDS[typeKey] || category?.fields || [];
 
+  const rawSub = String(listing?.subcategory || listing?.subCategory || listing?.propertyType || '').toLowerCase();
+  const displaySubcategory = (() => {
+    if (rawSub.includes('plot') || rawSub.includes('site') || rawSub.includes('land')) return 'Plot';
+    if (rawSub.includes('villa')) return 'Villa';
+    if (rawSub.includes('flat') || rawSub.includes('apartment') || rawSub.includes('house') || rawSub.length > 0) return 'Flat';
+    return listing?.subcategory || listing?.subCategory || null;
+  })();
+
   return (
     <div className="xl:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-card p-6 space-y-6">
       <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-4">
@@ -18,9 +26,9 @@ export default function ListingInfoCard({ listing, images, category }) {
         <span className="px-3 py-1 rounded-full text-xs font-bold bg-brand-blue/10 text-brand-blue">
           {category?.label || listing?.category || typeKey}
         </span>
-        {(listing.subcategory || listing.subCategory) && (
+        {displaySubcategory && (
           <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            Subcategory: {listing.subcategory || listing.subCategory}
+            Subcategory: {displaySubcategory}
           </span>
         )}
         {listing.subtitle && (

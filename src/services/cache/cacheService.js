@@ -84,6 +84,15 @@ function safeWrite(key, value) {
 /** In-flight request map (per storage key) so identical calls share one promise. */
 const inflight = new Map();
 
+/** Clear in-flight promises for a specific key or all keys. */
+export function clearInflight(key) {
+  if (key) {
+    inflight.delete(key);
+  } else {
+    inflight.clear();
+  }
+}
+
 export const cache = {
   get(namespace, key) {
     return safeRead(storageKey(namespace, key));

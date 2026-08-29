@@ -270,13 +270,6 @@ export default function ListedItems() {
                       <td className="px-5 py-3.5 text-right whitespace-nowrap">
                         <div className="inline-flex items-center gap-2">
                           <button
-                            onClick={() => setEditing(l)}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 px-3 py-1.5 text-sm font-bold hover:bg-brand-blue hover:text-white hover:border-brand-blue transition-colors"
-                            aria-label={`Edit ${l.title}`}
-                          >
-                            <i className="fa-solid fa-pen text-[10px]" aria-hidden="true" />
-                          </button>
-                          <button
                             onClick={() => handleDelete(l)}
                             className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-600 px-3 py-1.5 text-sm font-bold hover:bg-rose-100 transition-colors"
                             aria-label={`Delete ${l.title}`}

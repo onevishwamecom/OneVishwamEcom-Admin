@@ -31,7 +31,6 @@ export const CATEGORIES = [
     icon: 'fa-house-chimney',
     gradient: 'from-brand-blue to-brand-blue/70',
     fields: [
-      { key: 'propertyType', label: 'Property Type' },
       { key: 'bhk', label: 'BHK' },
       { key: 'bathrooms', label: 'Bathrooms' },
       { key: 'area_sqft', label: 'Area' },

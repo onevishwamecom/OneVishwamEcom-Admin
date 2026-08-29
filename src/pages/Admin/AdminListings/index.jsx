@@ -110,6 +110,7 @@ function AdminListings() {
           categoryById={categoryById}
           isUnseen={isUnseen}
           onOpenListing={openListing}
+          onRefresh={retry}
         />
       )}
     </PageContainer>

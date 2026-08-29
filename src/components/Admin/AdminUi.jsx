@@ -33,6 +33,44 @@ const STATUS_CONFIG = {
   },
 };
 
+const AVAILABILITY_STATUS_CONFIG = {
+  available: {
+    label: 'Available',
+    cls: 'bg-emerald-50 text-emerald-600 border-emerald-200/70',
+    icon: 'fa-circle-check',
+  },
+  sold_out: {
+    label: 'Sold Out',
+    cls: 'bg-red-50 text-red-600 border-red-200/70',
+    icon: 'fa-circle-xmark',
+  },
+  inactive: {
+    label: 'Inactive',
+    cls: 'bg-slate-100 text-slate-500 border-slate-200',
+    icon: 'fa-pause-circle',
+  },
+};
+
+function availabilityStatusConfig(status) {
+  return AVAILABILITY_STATUS_CONFIG[status] || {
+    label: status || 'Unknown',
+    cls: 'bg-slate-100 text-slate-600 border-slate-200',
+    icon: 'fa-circle-info',
+  };
+}
+
+export function AvailabilityBadge({ status, className = '' }) {
+  const cfg = availabilityStatusConfig(status);
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border capitalize whitespace-nowrap shadow-sm ${cfg.cls} ${className}`}
+    >
+      <i className={`fa-solid ${cfg.icon} text-[9px]`} aria-hidden="true" />
+      {cfg.label}
+    </span>
+  );
+}
+
 export function statusConfig(status) {
   return STATUS_CONFIG[status] || {
     label: status || 'Unknown',

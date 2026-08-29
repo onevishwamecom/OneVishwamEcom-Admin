@@ -183,6 +183,47 @@ export default function useListingReview() {
     setActiveModal(null);
   };
 
+  const confirmSoldOut = async () => {
+    if (!listing) return;
+    const isCurrentlySoldOut = listing.availabilityStatus === 'sold_out';
+    const nextStatus = isCurrentlySoldOut ? 'available' : 'sold_out';
+    const actionText = isCurrentlySoldOut ? 'Mark as Available' : 'Mark as Sold Out';
+
+    const result = await Swal.fire({
+      title: `${actionText}?`,
+      text: isCurrentlySoldOut
+        ? 'This will make the listing available to the public again.'
+        : 'This will mark the listing as sold out.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: isCurrentlySoldOut ? '#10b981' : '#dc3545',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: actionText,
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+      customClass: {
+        popup: 'rounded-2xl',
+        confirmButton: 'rounded-xl text-sm font-bold px-4 py-2.5',
+        cancelButton: 'rounded-xl text-sm font-bold px-4 py-2.5',
+      },
+    });
+    if (!result.isConfirmed) return;
+    
+    try {
+      const updated = await adminApi.updateAvailabilityStatus(type, id, nextStatus);
+      if (updated) {
+        setListing(updated);
+        showToast(
+          isCurrentlySoldOut ? 'Marked Available' : 'Marked Sold Out',
+          `Listing has been marked as ${isCurrentlySoldOut ? 'available' : 'sold out'}.`,
+        );
+      }
+    } catch {
+      showErrorToast('Failed', 'Could not update availability status.');
+    }
+    setActiveModal(null);
+  };
+
   const images = Array.isArray(listing?.images) ? listing.images : [];
 
   return {
@@ -210,5 +251,6 @@ export default function useListingReview() {
     confirmAlterations,
     confirmCancel,
     confirmOverride,
+    confirmSoldOut,
   };
 }

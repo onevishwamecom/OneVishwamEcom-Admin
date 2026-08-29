@@ -1,7 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import { formatINR, formatDate } from '../../../../utils';
 import { StatusBadge, DataTable } from '../../../../components/Admin/AdminUi';
+import { adminApi } from '../../../../api/adminData';
 
 const COLUMNS = [
   { key: 'listing',     label: 'Listing' },
@@ -10,12 +12,23 @@ const COLUMNS = [
   { key: 'location',    label: 'Location' },
   { key: 'price',       label: 'Price' },
   { key: 'submitted',   label: 'Submitted' },
-  { key: 'status',      label: 'Status',    className: 'w-px whitespace-nowrap' },
+  { key: 'availability', label: 'Availability', className: 'w-px whitespace-nowrap' },
+  { key: 'status',      label: 'Status',      className: 'w-px whitespace-nowrap' },
 ];
 
-function renderListingRow(l, contributorName, category, isUnseen, onOpenListing) {
+function renderListingRow(l, contributorName, category, isUnseen, onOpenListing, onUpdateAvailability, updatingAvailability) {
   const unseen = isUnseen(l._id || l.id);
   const title = l.title || l.name || l.brand || 'Untitled';
+  const availability = l.availabilityStatus || 'available';
+  const isSoldOut = availability === 'sold_out';
+
+  const handleToggle = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const newStatus = isSoldOut ? 'available' : 'sold_out';
+    onUpdateAvailability(l, newStatus);
+  };
+
   return [
     /* Listing title + inline view link */
     <td key="listing">
@@ -35,10 +48,6 @@ function renderListingRow(l, contributorName, category, isUnseen, onOpenListing)
         )}
         <span className="block">
           {title.length > 40 ? `${title.substring(0, 40)}…` : title}
-        </span>
-        <span className="flex items-center gap-2 mt-0.5">
-          <span className="text-[9px] font-normal text-slate-400">{l._id}</span>
-           
         </span>
       </Link>
     </td>,
@@ -70,6 +79,38 @@ function renderListingRow(l, contributorName, category, isUnseen, onOpenListing)
       {formatDate(l.createdAt)}
     </td>,
 
+    /* Availability — single status / toggle button */
+    <td key="availability">
+      <button
+        type="button"
+        onClick={handleToggle}
+        disabled={updatingAvailability === l._id || updatingAvailability === l.id}
+        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border capitalize whitespace-nowrap shadow-xs transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-80 ${
+          isSoldOut
+            ? 'bg-red-50 text-red-600 border-red-200/70 hover:bg-red-100'
+            : 'bg-emerald-50 text-emerald-600 border-emerald-200/70 hover:bg-emerald-100'
+        }`}
+        title={isSoldOut ? 'Click to mark as Available' : 'Click to mark as Sold Out'}
+      >
+        {updatingAvailability === l._id || updatingAvailability === l.id ? (
+          <>
+            <i className="fa-solid fa-circle-notch fa-spin text-[9px]" aria-hidden="true" />
+            Updating…
+          </>
+        ) : isSoldOut ? (
+          <>
+            <i className="fa-solid fa-circle-xmark text-[9px]" aria-hidden="true" />
+            Sold Out
+          </>
+        ) : (
+          <>
+            <i className="fa-solid fa-circle-check text-[9px]" aria-hidden="true" />
+            Available
+          </>
+        )}
+      </button>
+    </td>,
+
     /* Status */
     <td key="status">
       <StatusBadge status={l.status} />
@@ -83,24 +124,104 @@ export default function ListingsTable({
   categoryById,
   isUnseen = () => false,
   onOpenListing,
+  onRefresh,
 }) {
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = React.useState('');
+  const [selectedCategory, setSelectedCategory] = React.useState('');
   const [page, setPage] = React.useState(1);
   const rowsPerPage = 10;
+  const [updatingAvailability, setUpdatingAvailability] = React.useState(null);
 
-  const searchLower = searchQuery.toLowerCase();
+  // Debounce search query
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+      setPage(1); // Reset to first page when search changes
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const searchLower = debouncedSearchQuery.toLowerCase();
   const filtered = listings.filter(
     (l) => {
       const title = (l.title || l.name || l.brand || '').toLowerCase();
       const contributor = (contributorNameById[l.contributorId] || l.lister?.name || '').toLowerCase();
       const catLabel = (categoryById[l._type]?.label || l._type || '').toLowerCase();
       const location = (l.location || l.area || l.city || '').toLowerCase();
-      return title.includes(searchLower) ||
+      
+      const matchesSearch = title.includes(searchLower) ||
         contributor.includes(searchLower) ||
         catLabel.includes(searchLower) ||
         location.includes(searchLower);
+      
+      const matchesCategory = !selectedCategory || l._type === selectedCategory;
+      
+      return matchesSearch && matchesCategory;
     },
   );
+
+  const handleUpdateAvailability = async (listing, newStatus) => {
+    if (listing.availabilityStatus === newStatus) return;
+
+    const actionText = newStatus === 'sold_out' ? 'Sold Out' : 'Available';
+    const result = await Swal.fire({
+      title: `Mark as ${actionText}?`,
+      text: newStatus === 'sold_out'
+        ? 'Are you sure you want to mark this listing as Sold Out?'
+        : 'Are you sure you want to mark this listing as Available?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: newStatus === 'sold_out' ? '#ef4444' : '#10b981',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: `Yes, Mark ${actionText}`,
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+      customClass: {
+        popup: 'rounded-2xl',
+        confirmButton: 'rounded-xl text-sm font-bold px-4 py-2.5',
+        cancelButton: 'rounded-xl text-sm font-bold px-4 py-2.5',
+      },
+    });
+
+    if (!result.isConfirmed) return;
+
+    const id = listing._id || listing.id;
+    setUpdatingAvailability(id);
+
+    try {
+      await adminApi.updateAvailabilityStatus(listing._type, id, newStatus);
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Status Updated!',
+        text: `Listing is now marked as ${actionText}.`,
+        timer: 1500,
+        showConfirmButton: false,
+        customClass: {
+          popup: 'rounded-2xl',
+        },
+      });
+
+      if (onRefresh) {
+        await onRefresh();
+      } else {
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error('Failed to update availability:', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to update availability status. Please try again.',
+        customClass: {
+          popup: 'rounded-2xl',
+        },
+      });
+    } finally {
+      setUpdatingAvailability(null);
+    }
+  };
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
   const effectivePage = page > totalPages ? totalPages : page;
@@ -117,8 +238,15 @@ export default function ListingsTable({
             onChange={(e) => setSearchQuery(e.target.value)}
             className="flex-1 min-w-[160px] rounded-md border border-slate-200 py-1.5 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20 transition-all duration-150"
           />
-          <select className="rounded-md border border-slate-200 py-1.5 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20">
-            <option value="">Category</option>
+          <select
+            value={selectedCategory}
+            onChange={(e) => {
+              setSelectedCategory(e.target.value);
+              setPage(1);
+            }}
+            className="rounded-md border border-slate-200 py-1.5 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+          >
+            <option value="">All Categories</option>
             <option value="properties">Real Estate</option>
             <option value="vehicles">Vehicles</option>
             <option value="groceries">Groceries</option>
@@ -127,20 +255,6 @@ export default function ListingsTable({
             <option value="finance">Finance</option>
             <option value="services">Services</option>
           </select>
-          {/* <select className="rounded-md border border-slate-200 py-1.5 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20">
-            <option value="">Contributor</option>
-            <option value="all">All Contributors</option>
-          </select>
-          <select className="rounded-md border border-slate-200 py-1.5 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20">
-            <option value="">Location</option>
-            <option value="all">All Locations</option>
-          </select> */}
-          <button
-            type="button"
-            className="rounded-md bg-brand-blue text-white py-1.5 px-3 text-sm font-medium hover:bg-brand-blue/90 transition-colors"
-          >
-            Search
-          </button>
         </div>
       </div>
 
@@ -158,6 +272,8 @@ export default function ListingsTable({
             categoryById[l._type] || {},
             isUnseen,
             onOpenListing,
+            handleUpdateAvailability,
+            updatingAvailability,
           )
         }
         getRowClassName={(l) =>

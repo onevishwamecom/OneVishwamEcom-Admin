@@ -1,5 +1,5 @@
 import client from './client';
-import cache, { adminNamespace } from '../services/cache/cacheService';
+import cache, { adminNamespace, clearInflight } from '../services/cache/cacheService';
 import { CATEGORIES } from '../mock/categories';
 
 const inFlight = new Map();
@@ -139,6 +139,9 @@ function invalidateDataCaches() {
   ].forEach((key) => cache.remove(ns, key));
   cache.removeByPrefix(ns, 'listing:');
   cache.removeByPrefix(ns, 'contributor:');
+  // Clear in-flight promises to prevent stale data on immediate refetch
+  clearInflight();
+  inFlight.clear();
 }
 
 async function approveListing(type, id) {
@@ -182,6 +185,14 @@ async function deleteListing(type, id) {
   return true;
 }
 
+async function updateAvailabilityStatus(type, id, availabilityStatus) {
+  const item = unwrap(
+    await client.patch(`/admin/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}/availability`, { availabilityStatus }),
+  );
+  invalidateDataCaches();
+  return item?.item ? normalizeListing(item.item) : null;
+}
+
 export const adminApi = {
   getStats,
   getContributors,
@@ -192,6 +203,7 @@ export const adminApi = {
   requestChanges,
   cancelListing,
   updateListing,
+  updateAvailabilityStatus,
   deleteListing,
   getCategories,
   getActivity,
