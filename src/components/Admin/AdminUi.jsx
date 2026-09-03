@@ -260,7 +260,7 @@ export function DataTable({
 
   return (
     <div className={`bg-white rounded-2xl border border-slate-100 shadow-card overflow-hidden ${className}`}>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto touch-pan-y">
         <table className="min-w-full text-left text-sm border-collapse">
           <thead>
             <tr className="text-xs uppercase tracking-wider text-slate-400 border-b-2 border-slate-100">

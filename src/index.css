@@ -26,7 +26,6 @@
 }
 
 html {
-  scroll-behavior: smooth;
   scrollbar-gutter: stable;
   overflow-x: clip;
 }
@@ -108,6 +107,11 @@ body {
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Allow vertical scrolling while horizontally scrolling */
+  .touch-pan-y {
+    touch-action: pan-y;
   }
 
   .line-clamp-2 {

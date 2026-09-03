@@ -123,7 +123,7 @@ function AdminLayout() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div className="flex min-h-screen bg-slate-50">
       {/* Skip link */}
       <a
         href="#admin-main-content"
@@ -152,7 +152,7 @@ function AdminLayout() {
 
       {/* Mobile drawer */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-screen w-72 bg-sidebar-gradient lg:hidden transition-transform duration-300 ${
+        className={`fixed top-0 left-0 z-50 h-screen w-72 bg-sidebar-gradient lg:hidden transition-transform duration-300 overscroll-contain ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         aria-label="Admin navigation"
@@ -184,7 +184,7 @@ function AdminLayout() {
       </aside>
 
       {/* Main column */}
-      <div className="flex flex-1 flex-col overflow-hidden lg:ml-64 md:ml-20 ml-0 transition-all duration-300">
+      <div className="flex flex-1 flex-col lg:ml-64 md:ml-20 ml-0 transition-all duration-300">
         {/* Top bar */}
         <header className="sticky top-0 z-30 glass border-b border-slate-200/60">
           <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8 ml-12 lg:ml-0">
@@ -213,7 +213,7 @@ function AdminLayout() {
         {/* Content */}
         <main
           id="admin-main-content"
-          className="flex-1 overflow-y-auto bg-mesh-gradient bg-slate-50/95"
+          className="flex-1 bg-mesh-gradient bg-slate-50/95"
           role="main"
           tabIndex={-1}
         >

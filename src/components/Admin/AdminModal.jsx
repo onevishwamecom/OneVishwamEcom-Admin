@@ -30,7 +30,7 @@ export default function AdminModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 overscroll-contain"
       role="dialog"
       aria-modal="true"
       aria-label={title}
