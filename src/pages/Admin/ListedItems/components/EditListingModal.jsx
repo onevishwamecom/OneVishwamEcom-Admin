@@ -31,6 +31,7 @@ export default function EditListingModal({ open, onClose, listing, category, onC
   });
   const [images, setImages] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({});
   const fileRef = useRef(null);
 
   useEffect(() => {
@@ -47,23 +48,39 @@ export default function EditListingModal({ open, onClose, listing, category, onC
   const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
 
   const handleImageUpload = async (file) => {
+    const fileId = `${file.name}-${Date.now()}`;
     const formData = new FormData();
     formData.append('images', file);
 
+    setUploadProgress((prev) => ({ ...prev, [fileId]: 0 }));
+    setUploading(true);
+
     try {
-      setUploading(true);
       const response = await client.post('/upload/images', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (progressEvent) => {
+          const progress = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 1));
+          setUploadProgress((prev) => ({ ...prev, [fileId]: progress }));
+        },
       });
-      const urls = response.data?.data?.images || response.data?.images || [];
+
+      const backendResponse = response.data;
+      const urls = backendResponse?.data?.images || backendResponse?.images || [];
+
       if (urls.length > 0) {
         setImages((prev) => [...prev, urls[0]]);
       } else {
-        alert('Upload succeeded but no URL returned. Check console.');
+        throw new Error('No URL in upload response: ' + JSON.stringify(backendResponse));
       }
-    } catch {
-      alert('Failed to upload image. Please try again.');
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Upload failed';
+      alert(`Failed to upload image: ${msg}`);
     } finally {
+      setUploadProgress((prev) => {
+        const next = { ...prev };
+        delete next[fileId];
+        return next;
+      });
       setUploading(false);
     }
   };
@@ -184,33 +201,44 @@ export default function EditListingModal({ open, onClose, listing, category, onC
         <label className="block text-sm font-semibold text-slate-700 mb-2">Images</label>
         {images.length > 0 && (
           <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-3">
-            {images.map((url, i) => (
-              <div
-                key={`${url}-${i}`}
-                className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 border border-slate-200 group"
-              >
-                {url ? (
-                  <img src={url} alt={`image-${i}`} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-slate-300">
-                    <i className="fa-solid fa-image" />
-                  </div>
-                )}
-                {isBlobUrl(url) && (
-                  <span className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-xs font-medium">
-                    Will re-upload
-                  </span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setImages((prev) => prev.filter((_, idx) => idx !== i))}
-                  className="absolute top-1 right-1 h-6 w-6 rounded-full bg-brand-orange text-white flex items-center justify-center text-[10px] shadow-sm hover:bg-brand-orange/90"
-                  aria-label="Remove image"
+            {images.map((url, i) => {
+              const isUploading = Object.values(uploadProgress).some((p) => p > 0 && p < 100);
+              return (
+                <div
+                  key={`${url}-${i}`}
+                  className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 border border-slate-200 group"
                 >
-                  <i className="fa-solid fa-trash" />
-                </button>
-              </div>
-            ))}
+                  {url ? (
+                    <img src={url} alt={`image-${i}`} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-300">
+                      <i className="fa-solid fa-image" />
+                    </div>
+                  )}
+                  {isBlobUrl(url) && (
+                    <span className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-xs font-medium">
+                      Will re-upload
+                    </span>
+                  )}
+                  {isUploading && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <div className="text-white text-sm font-medium">
+                        <i className="fa-solid fa-spinner fa-spin mr-1" /> Uploading...
+                      </div>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setImages((prev) => prev.filter((_, idx) => idx !== i))}
+                    disabled={isUploading}
+                    className="absolute top-1 right-1 h-6 w-6 rounded-full bg-brand-orange text-white flex items-center justify-center text-[10px] shadow-sm hover:bg-brand-orange/90 disabled:opacity-50"
+                    aria-label="Remove image"
+                  >
+                    <i className="fa-solid fa-trash" />
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
         <input
