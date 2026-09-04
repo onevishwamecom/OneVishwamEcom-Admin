@@ -32,6 +32,7 @@ export default function EditListingModal({ open, onClose, listing, category, onC
   const [images, setImages] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
+  const [pendingUploads, setPendingUploads] = useState(0);
   const fileRef = useRef(null);
 
   useEffect(() => {
@@ -52,6 +53,7 @@ export default function EditListingModal({ open, onClose, listing, category, onC
     const formData = new FormData();
     formData.append('images', file);
 
+    setPendingUploads((prev) => prev + 1);
     setUploadProgress((prev) => ({ ...prev, [fileId]: 0 }));
     setUploading(true);
 
@@ -81,6 +83,7 @@ export default function EditListingModal({ open, onClose, listing, category, onC
         delete next[fileId];
         return next;
       });
+      setPendingUploads((prev) => Math.max(0, prev - 1));
       setUploading(false);
     }
   };
@@ -94,6 +97,11 @@ export default function EditListingModal({ open, onClose, listing, category, onC
   };
 
   const handleSave = async () => {
+    if (pendingUploads > 0) {
+      alert('Please wait for image uploads to complete before saving.');
+      return;
+    }
+
     const blobUrls = images.filter(isBlobUrl);
     if (blobUrls.length > 0) {
       setUploading(true);
@@ -137,13 +145,13 @@ export default function EditListingModal({ open, onClose, listing, category, onC
           </button>
           <button
             onClick={handleSave}
-            disabled={uploading}
+            disabled={uploading || pendingUploads > 0}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-brand-blue hover:bg-brand-blue/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {uploading ? (
+            {uploading || pendingUploads > 0 ? (
               <>
                 <i className="fa-solid fa-circle-notch fa-spin" aria-hidden="true" />
-                Uploading...
+                {pendingUploads > 0 ? `Uploading ${pendingUploads} image${pendingUploads > 1 ? 's' : ''}...` : 'Uploading...'}
               </>
             ) : (
               <>
