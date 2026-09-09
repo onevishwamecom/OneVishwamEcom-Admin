@@ -19,29 +19,28 @@ export default function ContributorsTable({ contributors = [] }) {
       emptyTitle="No contributors yet"
       emptyMessage="Contributors who list items will appear here."
       renderRow={(c) => [
-        <td key="name" className="font-medium text-slate-800">
-          <Link
-            to={`/admin/contributors/${encodeURIComponent(c.id || c._id)}`}
-            className="hover:text-brand-blue transition-colors"
-          >
-            {c.name}
-          </Link>
-        </td>,
-        <td key="contact" className="text-slate-600">
+        <Link
+          key="name"
+          to={`/admin/contributors/${encodeURIComponent(c.id || c._id)}`}
+          className="font-medium text-slate-800 hover:text-brand-blue transition-colors"
+        >
+          {c.name}
+        </Link>,
+        <span key="contact" className="text-slate-600">
           {c.contact || '—'}
-        </td>,
-        <td key="total" className="text-right font-extrabold text-slate-900">
+        </span>,
+        <span key="total" className="font-extrabold text-slate-900">
           {c.totalListings}
-        </td>,
-        <td key="pending" className="text-right font-semibold text-amber-700">
+        </span>,
+        <span key="pending" className="font-semibold text-amber-700">
           {c.pendingListings}
-        </td>,
-        <td key="approved" className="text-right font-semibold text-emerald-600">
+        </span>,
+        <span key="approved" className="font-semibold text-emerald-600">
           {c.approvedListings}
-        </td>,
-        <td key="cancelled" className="text-right font-semibold text-rose-500">
+        </span>,
+        <span key="cancelled" className="font-semibold text-rose-500">
           {c.cancelledListings}
-        </td>,
+        </span>,
       ]}
       className="border-0 shadow-none -m-5 rounded-none"
     />

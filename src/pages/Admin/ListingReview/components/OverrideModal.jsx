@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import AdminModal from '../../../../components/Admin/AdminModal';
+import SortableMediaList from '../../../../components/ui/SortableMediaList';
 import { SUBCATEGORIES, CATEGORY_SPECIFIC_FIELDS, PRICE_UNITS, PRICE_SUFFIXES_BY_CATEGORY, OVERRIDE_INPUT_CLASS } from '../constants';
 import client from '../../../../api/client';
 
@@ -12,64 +13,63 @@ export default function OverrideModal({
   setOverrideForm,
   overrideImages,
   setOverrideImages,
-  overrideFileRef,
   onConfirm,
 }) {
   const typeKey = category?.id || listing?._type || listing?.category || 'properties';
   const subcategoryList = SUBCATEGORIES[typeKey] || SUBCATEGORIES[listing?.category] || [];
   const catFields = CATEGORY_SPECIFIC_FIELDS[typeKey] || CATEGORY_SPECIFIC_FIELDS[listing?.category] || [];
   
-  const [uploading, setUploading] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
   const [pendingUploads, setPendingUploads] = useState(0);
-  const [uploadProgress, setUploadProgress] = useState({});
 
-  const handleImageUpload = async (file) => {
-    const fileId = `${file.name}-${Date.now()}`;
+  // Create stable media items with persistent IDs based on URL
+  const media = useMemo(() => (overrideImages || []).map((url) => ({
+    id: `media-${url}`, // Stable ID based on URL
+    type: 'image',
+    url,
+    isExisting: true,
+  })), [overrideImages]);
+
+  const handleMediaChange = useCallback((newMedia) => {
+    const urls = newMedia.filter(m => m.url).map(m => m.url);
+    setOverrideImages(urls);
+  }, [setOverrideImages]);
+
+  const handleFileUpload = useCallback(async (file) => {
     const formData = new FormData();
     formData.append('images', file);
-
-    setPendingUploads((prev) => prev + 1);
-    setUploadProgress((prev) => ({ ...prev, [fileId]: 0 }));
-    setUploading(true);
-
+    
+    setPendingUploads(prev => prev + 1);
+    
     try {
       const response = await client.post('/upload/images', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
-        onUploadProgress: (progressEvent) => {
-          const progress = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 1));
-          setUploadProgress((prev) => ({ ...prev, [fileId]: progress }));
-        },
       });
-
-      const backendResponse = response.data;
-      const urls = backendResponse?.data?.images || backendResponse?.images || [];
-
+      const urls = response.data?.data?.images || response.data?.images || [];
       if (urls.length > 0) {
-        setOverrideImages((prev) => [...prev, urls[0]]);
-      } else {
-        throw new Error('No URL in upload response: ' + JSON.stringify(backendResponse));
+        setOverrideImages(prev => [...prev, urls[0]]);
       }
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Upload failed';
-      alert(`Failed to upload image: ${msg}`);
+      alert('Failed to upload image: ' + (err.response?.data?.message || err.message));
     } finally {
-      setUploadProgress((prev) => {
-        const next = { ...prev };
-        delete next[fileId];
-        return next;
-      });
-      setPendingUploads((prev) => Math.max(0, prev - 1));
-      setUploading(false);
+      setPendingUploads(prev => Math.max(0, prev - 1));
     }
-  };
+  }, [setOverrideImages]);
 
-  const handleFileChange = (e) => {
+  const handleFileSelect = useCallback((e) => {
     const file = e.target.files[0];
-    if (file) {
-      handleImageUpload(file);
-    }
+    if (file) handleFileUpload(file);
     e.target.value = '';
-  };
+  }, [handleFileUpload]);
+
+  const handleSave = useCallback(async () => {
+    setSaveLoading(true);
+    try {
+      await onConfirm();
+    } finally {
+      setSaveLoading(false);
+    }
+  }, [onConfirm]);
 
   return (
     <AdminModal
@@ -89,14 +89,14 @@ export default function OverrideModal({
             Cancel
           </button>
           <button
-            onClick={onConfirm}
-            disabled={uploading || pendingUploads > 0}
+            onClick={handleSave}
+            disabled={saveLoading}
             className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-brand-blue hover:bg-brand-blue/90 shadow-md shadow-brand-blue/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {uploading || pendingUploads > 0 ? (
+            {saveLoading ? (
               <>
                 <i className="fa-solid fa-circle-notch fa-spin" aria-hidden="true" />
-                {pendingUploads > 0 ? `Uploading ${pendingUploads} image${pendingUploads > 1 ? 's' : ''}...` : 'Uploading...'}
+                Saving...
               </>
             ) : (
               <>
@@ -115,7 +115,7 @@ export default function OverrideModal({
         </span>
       </div>
 
-      <div className="space-y-6 max-h-[65vh] overflow-y-auto pr-1">
+      <div className="space-y-6">
         {/* Basic Information Section */}
         <div>
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
@@ -394,62 +394,38 @@ export default function OverrideModal({
         <div className="border-t border-slate-100 pt-5">
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
             <i className="fa-solid fa-images text-indigo-600" />
-            Listing Photos ({overrideImages.length})
+            Media ({overrideImages.length})
           </h4>
-          {overrideImages.length > 0 && (
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-3">
-              {overrideImages.map((url, i) => {
-                const isUploading = Object.values(uploadProgress).some((p) => p > 0 && p < 100);
-                return (
-                  <div
-                    key={`${url}-${i}`}
-                    className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 border border-slate-200 group"
-                  >
-                    {url ? (
-                      <img src={url} alt={`image-${i}`} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-300">
-                        <i className="fa-solid fa-image" />
-                      </div>
-                    )}
-                    {isUploading && (
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                        <div className="text-white text-sm font-medium">
-                          <i className="fa-solid fa-spinner fa-spin mr-1" /> Uploading...
-                        </div>
-                      </div>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => setOverrideImages((prev) => prev.filter((_, idx) => idx !== i))}
-                      disabled={isUploading}
-                      className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full bg-red-600 text-white flex items-center justify-center text-[10px] shadow-md hover:bg-red-700 transition-colors disabled:opacity-50"
-                      aria-label="Remove image"
-                    >
-                      <i className="fa-solid fa-trash" />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <SortableMediaList
+            media={media}
+            onMediaChange={handleMediaChange}
+            maxMedia={6}
+            accept="image/*,video/*"
+            disabled={false}
+            showMainBadge={true}
+          />
           <input
-            ref={overrideFileRef}
             type="file"
             accept="image/*"
             className="hidden"
-            onChange={handleFileChange}
-            disabled={uploading}
+            onChange={handleFileSelect}
+            id="override-media-upload"
           />
           <button
             type="button"
-            onClick={() => overrideFileRef.current?.click()}
-            disabled={uploading}
-            className="inline-flex items-center gap-2 rounded-xl border-2 border-dashed border-slate-300 text-slate-600 hover:border-brand-blue hover:text-brand-blue px-4 py-2.5 text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => document.getElementById('override-media-upload')?.click()}
+            disabled={pendingUploads > 0 || (overrideImages?.length || 0) >= 6}
+            className="mt-3 inline-flex items-center gap-2 rounded-xl border-2 border-dashed border-slate-300 text-slate-600 hover:border-brand-blue hover:text-brand-blue px-4 py-2.5 text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <i className="fa-solid fa-cloud-arrow-up" aria-hidden="true" />
             Add Image
           </button>
+          {pendingUploads > 0 && (
+            <p className="mt-2 text-xs text-slate-500 flex items-center gap-2">
+              <i className="fa-solid fa-spinner fa-spin text-brand-blue" />
+              Uploading {pendingUploads} image{pendingUploads > 1 ? 's' : ''}...
+            </p>
+          )}
         </div>
       </div>
     </AdminModal>
