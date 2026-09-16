@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { auth } from '../firebase/config';
 
 /**
  * ============================================================================
@@ -15,7 +16,10 @@ import axios from 'axios';
  */
 
 const client = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL:
+    import.meta.env.VITE_API_BASE_URL ||
+    import.meta.env.VITE_API_URL ||
+    'https://asia-south1-onevishwam.cloudfunctions.net/api',
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
   validateStatus: (status) => status >= 200 && status < 300,
@@ -61,6 +65,23 @@ client.interceptors.response.use(
 
       originalRequest._retry = true;
       isRefreshing = true;
+
+      if (auth?.currentUser) {
+        try {
+          const newAccess = await auth.currentUser.getIdToken(true);
+          localStorage.setItem('accessToken', newAccess);
+          processQueue(null, newAccess);
+          originalRequest.headers.Authorization = `Bearer ${newAccess}`;
+          return client(originalRequest);
+        } catch (refreshErr) {
+          processQueue(refreshErr, null);
+          clearAuthData();
+          window.dispatchEvent(new Event('auth:logout'));
+          return Promise.reject(refreshErr);
+        } finally {
+          isRefreshing = false;
+        }
+      }
 
       const refreshToken = localStorage.getItem('refreshToken');
       if (!refreshToken) {

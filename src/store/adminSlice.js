@@ -1,6 +1,8 @@
 import { createSlice, createAsyncThunk, createAction } from '@reduxjs/toolkit';
 import { useSelector, useDispatch } from 'react-redux';
 import client from '../api/client';
+import { auth } from '../firebase/config';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import cache, { adminNamespace } from '../services/cache/cacheService';
 
 const SESSION_KEY = 'wvz_admin_session';
@@ -28,15 +30,25 @@ export const adminLoginUser = createAsyncThunk(
   'admin/login',
   async ({ email, password }, { rejectWithValue }) => {
     try {
-      const { data } = await client.post('/admin/auth/login', { email, password });
-      const { accessToken, refreshToken, admin } = data.data;
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
-      const session = { ...admin, loggedInAt: new Date().toISOString() };
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      const idToken = result.user.uid ? await result.user.getIdToken() : result.user.stsTokenManager?.token;
+      if (!idToken) {
+        throw new Error('No ID token received from Firebase Auth');
+      }
+      console.log('🔑 [ADMIN ID TOKEN]:', idToken);
+      localStorage.setItem('accessToken', idToken);
+      localStorage.removeItem('refreshToken');
+      const decoded = JSON.parse(atob(idToken.split('.')[1]));
+      const session = {
+        id: decoded.sub || decoded.user_id,
+        email: result.user.email,
+        displayName: result.user.displayName,
+        loggedInAt: new Date().toISOString(),
+      };
       writeStoredSession(session);
       return session;
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Invalid admin credentials');
+      return rejectWithValue(err.message || 'Invalid admin credentials');
     }
   },
 );
