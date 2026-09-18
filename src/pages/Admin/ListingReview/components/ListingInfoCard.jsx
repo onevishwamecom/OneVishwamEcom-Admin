@@ -40,8 +40,8 @@ export default function ListingInfoCard({ listing, images, category }) {
 
       <div>
         <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Description</p>
-        <p className="text-sm font-medium text-slate-600 leading-relaxed bg-slate-50 border border-slate-100 rounded-2xl p-4">
-          {listing.description || 'No description provided'}
+        <p className="text-sm font-medium text-slate-600 leading-relaxed bg-slate-50 border border-slate-100 rounded-2xl p-4 whitespace-pre-line">
+          {listing.details || listing.description || 'No description provided'}
         </p>
       </div>
 
@@ -55,7 +55,7 @@ export default function ListingInfoCard({ listing, images, category }) {
           }
         />
         <Field label="City" value={listing.city} />
-        <Field label="Area / Locality" value={listing.area} />
+        <Field label="Area / Locality" value={listing.area || listing.area_sqft} />
         <Field label="Pincode" value={listing.pincode} />
         <Field label="Contact Phone" value={listing.contact || listing.contactPhone} />
         <Field label="Location / Landmark" value={listing.location} />
@@ -72,11 +72,55 @@ export default function ListingInfoCard({ listing, images, category }) {
             {catFields.map((f) => {
               const val = listing[f.key];
               if (val === undefined || val === null || val === '') return null;
-              return <Field key={f.key} label={f.label} value={String(val)} />;
+              const displayVal = f.key === 'loanApproved' ? (val === true || val === 'Yes' ? 'Yes' : 'No') : String(val);
+              return <Field key={f.key} label={f.label} value={displayVal} />;
             })}
           </div>
         </div>
       )}
+
+      {(() => {
+        const brochureLink = listing.brochure || listing.pdfUrl || listing.floorPlanPdf || listing.pdf;
+        const docsList = Array.isArray(listing.documents)
+          ? listing.documents
+          : (listing.documents ? [listing.documents] : []);
+
+        if (!brochureLink && docsList.length === 0) return null;
+
+        return (
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Brochure & Documents</p>
+            <div className="flex flex-wrap gap-2">
+              {brochureLink && (
+                <a
+                  href={brochureLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 transition-colors text-xs font-semibold"
+                >
+                  <i className="fa-solid fa-file-pdf text-red-500" /> View Project Brochure
+                </a>
+              )}
+              {docsList.map((doc, idx) => {
+                const url = typeof doc === 'string' ? doc : doc.url;
+                if (!url) return null;
+                const name = typeof doc === 'string' ? `Document ${idx + 1}` : doc.name || `Document ${idx + 1}`;
+                return (
+                  <a
+                    key={idx}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100 transition-colors text-xs font-medium"
+                  >
+                    <i className="fa-solid fa-file-lines text-slate-500" /> {name}
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
       <div>
         <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Images ({images.length})</p>
@@ -108,6 +152,21 @@ export default function ListingInfoCard({ listing, images, category }) {
           </div>
         )}
       </div>
+
+      {(() => {
+        const videoLink = listing.video || (Array.isArray(listing.videos) && listing.videos[0]);
+        if (!videoLink) return null;
+        return (
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
+              <i className="fa-solid fa-video text-brand-blue" /> Video Preview
+            </p>
+            <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-black aspect-video max-w-md shadow-sm">
+              <video src={videoLink} controls className="w-full h-full object-contain" />
+            </div>
+          </div>
+        );
+      })()}
 
       {listing.adminComment && (
         <div className="rounded-2xl bg-brand-orange/5 border border-brand-orange/20 p-4">

@@ -224,7 +224,12 @@ export default function useListingReview() {
     setActiveModal(null);
   };
 
-  const images = Array.isArray(listing?.images) ? listing.images : [];
+  const images =
+    Array.isArray(listing?.images) && listing.images.length > 0
+      ? listing.images
+      : listing?.image
+      ? [listing.image]
+      : [];
 
   return {
     type,
