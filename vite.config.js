@@ -10,8 +10,9 @@ export default defineConfig({
     // Proxy /api to the dummy API server (server/dummy-api.mjs, port 5002).
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:5001',
+        target: 'https://asia-south1-onevishwam.cloudfunctions.net',
         changeOrigin: true,
+        secure: false,
       },
     },
   },

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import AdminModal from '../../../../components/Admin/AdminModal';
 import SortableMediaList from '../../../../components/ui/SortableMediaList';
-import { COMMON_FIELDS, OVERRIDE_INPUT_CLASS } from '../../ListingReview/constants';
+import { COMMON_FIELDS, CATEGORY_SPECIFIC_FIELDS, OVERRIDE_INPUT_CLASS } from '../../ListingReview/constants';
 import client from '../../../../api/client';
 
 const isBlobUrl = (url) => url?.startsWith('blob:');
@@ -22,12 +22,18 @@ const uploadBlobToCloudinary = async (blobUrl) => {
 };
 
 export default function EditListingModal({ open, onClose, listing, category, onConfirm }) {
+  const catFields = useMemo(() => {
+    if (!listing) return [];
+    const typeKey = listing._type || listing.category || 'properties';
+    return CATEGORY_SPECIFIC_FIELDS[typeKey] || category?.fields || [];
+  }, [listing, category]);
+
   const [form, setForm] = useState(() => {
     if (!listing) return {};
     const base = Object.fromEntries(COMMON_FIELDS.map((f) => [f.key, listing[f.key] ?? '']));
-    const extra = category?.fields
-      ? Object.fromEntries(category.fields.map((f) => [f.key, listing[f.key] ?? '']))
-      : {};
+    const typeKey = listing._type || listing.category || 'properties';
+    const fields = CATEGORY_SPECIFIC_FIELDS[typeKey] || category?.fields || [];
+    const extra = Object.fromEntries(fields.map((f) => [f.key, listing[f.key] ?? '']));
     return { ...base, ...extra };
   });
   const [images, setImages] = useState([]);
@@ -179,18 +185,35 @@ export default function EditListingModal({ open, onClose, listing, category, onC
           </div>
         ))}
 
-        {category?.fields?.map((f) => (
+        {catFields?.map((f) => (
           <div key={f.key}>
             <label htmlFor={`edit-${f.key}`} className="block text-sm font-semibold text-slate-700 mb-1.5">
               {f.label}
             </label>
-            <input
-              id={`edit-${f.key}`}
-              type="text"
-              value={form[f.key] ?? ''}
-              onChange={set(f.key)}
-              className={OVERRIDE_INPUT_CLASS}
-            />
+            {f.type === 'select' ? (
+              <select
+                id={`edit-${f.key}`}
+                value={form[f.key] ?? ''}
+                onChange={set(f.key)}
+                className={OVERRIDE_INPUT_CLASS}
+              >
+                <option value="">Select {f.label}</option>
+                {f.options?.map((opt) => (
+                  <option key={typeof opt === 'object' ? opt.value : opt} value={typeof opt === 'object' ? opt.value : opt}>
+                    {typeof opt === 'object' ? opt.label : opt}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                id={`edit-${f.key}`}
+                type={f.type || 'text'}
+                placeholder={f.placeholder || ''}
+                value={form[f.key] ?? ''}
+                onChange={set(f.key)}
+                className={OVERRIDE_INPUT_CLASS}
+              />
+            )}
           </div>
         ))}
       </div>

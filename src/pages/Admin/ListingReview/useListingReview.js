@@ -104,8 +104,20 @@ export default function useListingReview() {
   }, [listing, type]);
 
   const contributor = useMemo(
-    () => contributors.find((c) => (c._id || c.id) === (listing?.contributorId || listing?.lister?._id)) || null,
-    [contributors, listing?.contributorId, listing?.lister?._id],
+    () =>
+      contributors.find((c) => (c._id || c.id) === (listing?.contributorId || listing?.lister?._id)) ||
+      (listing?.contributor?.name ? listing.contributor : null) ||
+      (listing?.lister?.name ? listing.lister : null) ||
+      (listing
+        ? {
+            name: listing.channelPartnerName || listing.vendorName || 'Contributor',
+            email: listing.contactEmail || listing.email || '',
+            contact: listing.contact || listing.phone || '',
+            city: listing.city || '',
+            totalListings: 1,
+          }
+        : null),
+    [contributors, listing],
   );
   const contributorDetail = contributor;
   const category = useMemo(() => getCategoryById(type), [type]);

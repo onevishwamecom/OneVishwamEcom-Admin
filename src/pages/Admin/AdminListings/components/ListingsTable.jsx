@@ -268,7 +268,7 @@ export default function ListingsTable({
         renderRow={(l) =>
           renderListingRow(
             l,
-            contributorNameById[l.contributorId] || l.lister?.name,
+            contributorNameById[l.contributorId] || l.lister?.name || l.contributor?.name || l.channelPartnerName || l.vendorName || 'Contributor',
             categoryById[l._type] || {},
             isUnseen,
             onOpenListing,

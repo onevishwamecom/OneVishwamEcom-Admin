@@ -41,7 +41,13 @@ export default function ListingInfoCard({ listing, images, category }) {
       <div>
         <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Description</p>
         <p className="text-sm font-medium text-slate-600 leading-relaxed bg-slate-50 border border-slate-100 rounded-2xl p-4 whitespace-pre-line">
-          {listing.details || listing.description || 'No description provided'}
+          {typeof listing.description === 'string' && listing.description.trim() !== ''
+            ? listing.description
+            : typeof listing.details === 'string' && listing.details.trim() !== ''
+            ? listing.details
+            : typeof listing.details === 'object' && listing.details !== null && typeof listing.details.description === 'string' && listing.details.description.trim() !== ''
+            ? listing.details.description
+            : 'No description provided'}
         </p>
       </div>
 
@@ -49,13 +55,13 @@ export default function ListingInfoCard({ listing, images, category }) {
         <Field
           label="Price"
           value={
-            listing.price
-              ? `${formatINR(listing.price)}${listing.priceSuffix ? ` ${listing.priceSuffix}` : ''}${listing.priceType ? ` (${listing.priceType})` : ''}`
+            listing.price || (listing.details && typeof listing.details === 'object' && listing.details.expectedPrice)
+              ? `${formatINR(listing.price || listing.details?.expectedPrice)}${listing.priceSuffix ? ` ${listing.priceSuffix}` : ''}${listing.priceType ? ` (${listing.priceType})` : ''}`
               : '—'
           }
         />
         <Field label="City" value={listing.city} />
-        <Field label="Area / Locality" value={listing.area || listing.area_sqft} />
+        <Field label="Area / Locality" value={listing.area || listing.area_sqft || listing.details?.dimensions} />
         <Field label="Pincode" value={listing.pincode} />
         <Field label="Contact Phone" value={listing.contact || listing.contactPhone} />
         <Field label="Location / Landmark" value={listing.location} />
@@ -70,8 +76,10 @@ export default function ListingInfoCard({ listing, images, category }) {
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {catFields.map((f) => {
-              const val = listing[f.key];
-              if (val === undefined || val === null || val === '') return null;
+              const val = listing[f.key] !== undefined && listing[f.key] !== null 
+                ? listing[f.key] 
+                : (listing.details && typeof listing.details === 'object' ? listing.details[f.key] : undefined);
+              if (val === undefined || val === null || val === '' || typeof val === 'object') return null;
               const displayVal = f.key === 'loanApproved' ? (val === true || val === 'Yes' ? 'Yes' : 'No') : String(val);
               return <Field key={f.key} label={f.label} value={displayVal} />;
             })}
