@@ -52,7 +52,7 @@ export default function AdminLoginForm({
               label="Administrator email"
               type="email"
               icon="fa-envelope"
-              placeholder="admin@onevishwam.com"
+              placeholder="[EMAIL_ADDRESS]"
               value={form.email}
               onChange={(e) => updateField('email', e.target.value)}
               error={errors.email}

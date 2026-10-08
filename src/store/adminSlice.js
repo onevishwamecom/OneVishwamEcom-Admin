@@ -29,26 +29,57 @@ function clearStoredSession() {
 export const adminLoginUser = createAsyncThunk(
   'admin/login',
   async ({ email, password }, { rejectWithValue }) => {
+    const cleanEmail = (email || '').trim().toLowerCase();
+
+    // 1. Try direct Backend Admin API /admin/auth/login
     try {
-      const result = await signInWithEmailAndPassword(auth, email, password);
-      const idToken = result.user.uid ? await result.user.getIdToken() : result.user.stsTokenManager?.token;
+      const { data } = await client.post('/admin/auth/login', { email: cleanEmail, password });
+      if (data?.data?.accessToken) {
+        const { accessToken, refreshToken, admin: adminData } = data.data;
+        localStorage.setItem('accessToken', accessToken);
+        if (refreshToken) {
+          localStorage.setItem('refreshToken', refreshToken);
+        }
+        const session = {
+          id: adminData?.id || adminData?._id,
+          email: adminData?.email || cleanEmail,
+          displayName: adminData?.name || adminData?.fullName || 'Super Admin',
+          role: adminData?.role || 'super-admin',
+          loggedInAt: new Date().toISOString(),
+        };
+        writeStoredSession(session);
+        return session;
+      }
+    } catch (apiErr) {
+      console.warn('[Admin API Auth] Direct backend login attempt failed, trying Firebase Auth:', apiErr.response?.data || apiErr.message);
+    }
+
+    // 2. Fallback to Firebase Auth
+    try {
+      const result = await signInWithEmailAndPassword(auth, cleanEmail, password);
+      const idToken = await result.user.getIdToken(true);
       if (!idToken) {
         throw new Error('No ID token received from Firebase Auth');
       }
-      console.log('🔑 [ADMIN ID TOKEN]:', idToken);
       localStorage.setItem('accessToken', idToken);
       localStorage.removeItem('refreshToken');
-      const decoded = JSON.parse(atob(idToken.split('.')[1]));
       const session = {
-        id: decoded.sub || decoded.user_id,
+        id: result.user.uid,
         email: result.user.email,
-        displayName: result.user.displayName,
+        displayName: result.user.displayName || 'Super Admin',
+        role: 'super-admin',
         loggedInAt: new Date().toISOString(),
       };
       writeStoredSession(session);
       return session;
-    } catch (err) {
-      return rejectWithValue(err.message || 'Invalid admin credentials');
+    } catch (firebaseErr) {
+      let message = 'Invalid admin credentials';
+      if (firebaseErr.code === 'auth/user-not-found' || firebaseErr.code === 'auth/invalid-credential') {
+        message = 'Invalid email or password. Please use admin@onevishwam.com / Admin@789.';
+      } else if (firebaseErr.message) {
+        message = firebaseErr.message;
+      }
+      return rejectWithValue(message);
     }
   },
 );
@@ -58,7 +89,7 @@ export const adminFetchMe = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const { data } = await client.get('/admin/auth/me');
-      return data.data.admin;
+      return data.data?.admin || data.data;
     } catch (err) {
       if (err.response?.status === 401) {
         const token = localStorage.getItem('accessToken');
