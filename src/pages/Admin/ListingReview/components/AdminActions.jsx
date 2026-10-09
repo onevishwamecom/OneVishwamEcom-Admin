@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function AdminActions({ listing, setActiveModal, setReason, startOverride, confirmSoldOut }) {
+export default function AdminActions({ listing, setActiveModal, setReason, startOverride, confirmSoldOut, confirmDelete }) {
   const isSoldOut = listing?.availabilityStatus === 'sold_out';
   const status = listing?.status || 'pending';
 
@@ -53,7 +53,7 @@ export default function AdminActions({ listing, setActiveModal, setReason, start
     },
     {
       id: 'override',
-      label: 'Override Information',
+      label: 'Override Info',
       icon: 'fa-pen',
       disabled: false,
       cls: 'border-brand-blue/25 bg-brand-blue/5 hover:bg-brand-blue/10 text-brand-blue hover:border-brand-blue/40',
@@ -61,13 +61,22 @@ export default function AdminActions({ listing, setActiveModal, setReason, start
     },
     {
       id: 'soldOut',
-      label: isSoldOut ? 'Mark as Available' : 'Mark as Sold Out',
+      label: isSoldOut ? 'Mark Available' : 'Mark Sold Out',
       icon: isSoldOut ? 'fa-circle-check' : 'fa-circle-xmark',
       disabled: false,
       cls: isSoldOut
         ? 'border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100 text-emerald-700 hover:border-emerald-300'
-        : 'border-red-200 bg-red-50/70 hover:bg-red-100 text-red-600 hover:border-red-300',
+        : 'border-amber-200 bg-amber-50/70 hover:bg-amber-100 text-amber-700 hover:border-amber-300',
       onClick: () => confirmSoldOut?.(),
+    },
+    {
+      id: 'delete',
+      label: 'Delete Listing',
+      icon: 'fa-trash-can',
+      isIconOnly: true,
+      disabled: false,
+      cls: 'border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:border-rose-300',
+      onClick: () => confirmDelete?.(),
     },
   ];
 
@@ -85,10 +94,11 @@ export default function AdminActions({ listing, setActiveModal, setReason, start
             disabled={a.disabled}
             onClick={a.onClick}
             title={a.disabled ? `Listing is already ${a.label}` : a.label}
-            className={`flex-1 min-w-[130px] inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-bold transition-all duration-150 shadow-2xs ${a.cls}`}
+            aria-label={a.label}
+            className={`${a.isIconOnly ? 'w-10 shrink-0' : 'flex-1 min-w-[130px]'} inline-flex items-center justify-center gap-2 rounded-xl border py-2.5 text-xs font-bold transition-all duration-150 shadow-2xs ${a.cls}`}
           >
             <i className={`fa-solid ${a.icon} text-sm transition-transform ${!a.disabled ? 'group-hover:scale-110' : ''}`} aria-hidden="true" />
-            <span className="whitespace-nowrap">{a.label}</span>
+            {!a.isIconOnly && <span className="whitespace-nowrap">{a.label}</span>}
           </button>
         ))}
       </div>

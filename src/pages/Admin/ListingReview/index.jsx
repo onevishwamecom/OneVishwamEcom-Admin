@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { StatusBadge } from '../../../components/Admin/AdminUi';
 import { PageContainer } from '../../../components/layout/PageContainer';
 import useListingReadStatus from '../../../hooks/useListingReadStatus';
@@ -15,6 +15,7 @@ import OverrideModal from './components/OverrideModal';
 import { DetailPageSkeleton, ErrorState } from '../../../components/skeleton';
 
 function ListingReview() {
+  const navigate = useNavigate();
   const {
     type,
     listing,
@@ -40,7 +41,15 @@ function ListingReview() {
     confirmCancel,
     confirmOverride,
     confirmSoldOut,
+    confirmDelete,
   } = useListingReview();
+
+  const handleConfirmDelete = async () => {
+    const success = await confirmDelete();
+    if (success) {
+      navigate('/admin/listings', { replace: true });
+    }
+  };
 
   const { markAsRead } = useListingReadStatus();
 
@@ -105,6 +114,7 @@ function ListingReview() {
         setReason={setReason}
         startOverride={startOverride}
         confirmSoldOut={confirmSoldOut}
+        confirmDelete={handleConfirmDelete}
       />
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
