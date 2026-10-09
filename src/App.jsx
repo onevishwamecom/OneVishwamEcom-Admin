@@ -15,6 +15,7 @@ const AdminCategories = lazy(() => import('./pages/Admin/AdminCategories'));
 const AdminActivity = lazy(() => import('./pages/Admin/AdminActivity'));
 const ListedItems = lazy(() => import('./pages/Admin/ListedItems'));
 const ListingReview = lazy(() => import('./pages/Admin/ListingReview'));
+const AdminUsers = lazy(() => import('./pages/Admin/AdminUsers'));
 
 function RequireAdmin({ children }) {
   const { isAdminLoggedIn } = useAdminAuth();
@@ -65,6 +66,7 @@ function App() {
               <Route path="approved-items/:category" element={<ListedItems />} />
               <Route path="contributors" element={<AdminContributors />} />
               <Route path="contributors/:id" element={<ContributorProfile />} />
+              <Route path="users" element={<AdminUsers />} />
               <Route path="categories" element={<AdminCategories />} />
               <Route path="activity" element={<AdminActivity />} />
             </Route>
