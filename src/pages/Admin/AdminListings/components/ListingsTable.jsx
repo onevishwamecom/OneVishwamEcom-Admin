@@ -14,9 +14,10 @@ const COLUMNS = [
   { key: 'submitted',   label: 'Submitted' },
   { key: 'availability', label: 'Availability', className: 'w-px whitespace-nowrap' },
   { key: 'status',      label: 'Status',      className: 'w-px whitespace-nowrap' },
+  { key: 'action',      label: 'Action',      className: 'w-px whitespace-nowrap text-right' },
 ];
 
-function renderListingRow(l, contributorName, category, isUnseen, onOpenListing, onUpdateAvailability, updatingAvailability) {
+function renderListingRow(l, contributorName, category, isUnseen, onOpenListing, onUpdateAvailability, updatingAvailability, onDeleteListing) {
   const unseen = isUnseen(l._id || l.id);
   const title = l.title || l.name || l.brand || 'Untitled';
   const availability = l.availabilityStatus || 'available';
@@ -27,6 +28,12 @@ function renderListingRow(l, contributorName, category, isUnseen, onOpenListing,
     e.stopPropagation();
     const newStatus = isSoldOut ? 'available' : 'sold_out';
     onUpdateAvailability(l, newStatus);
+  };
+
+  const handleDelete = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onDeleteListing(l);
   };
 
   return [
@@ -114,6 +121,19 @@ function renderListingRow(l, contributorName, category, isUnseen, onOpenListing,
     /* Status */
     <td key="status">
       <StatusBadge status={l.status} />
+    </td>,
+
+    /* Action (Delete) */
+    <td key="action" className="text-right whitespace-nowrap">
+      <button
+        type="button"
+        onClick={handleDelete}
+        className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:border-rose-300 transition-colors"
+        title="Delete listing"
+        aria-label="Delete listing"
+      >
+        <i className="fa-solid fa-trash-can text-xs" aria-hidden="true" />
+      </button>
     </td>,
   ];
 }
@@ -223,6 +243,54 @@ export default function ListingsTable({
     }
   };
 
+  const handleDeleteListing = async (listing) => {
+    const id = listing._id || listing.id;
+    const title = listing.title || listing.name || listing.brand || 'Untitled';
+    const result = await Swal.fire({
+      title: 'Delete this item?',
+      text: `"${title}" will be permanently removed from MongoDB.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes, Delete',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+      customClass: {
+        popup: 'rounded-2xl',
+        confirmButton: 'rounded-xl text-sm font-bold px-4 py-2.5',
+        cancelButton: 'rounded-xl text-sm font-bold px-4 py-2.5',
+      },
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await adminApi.deleteListing(listing._type, id);
+      await Swal.fire({
+        icon: 'success',
+        title: 'Deleted!',
+        text: 'The listing has been permanently removed.',
+        timer: 1500,
+        showConfirmButton: false,
+        customClass: { popup: 'rounded-2xl' },
+      });
+      if (onRefresh) {
+        await onRefresh();
+      } else {
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error('Failed to delete listing:', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to delete listing. Please try again.',
+        customClass: { popup: 'rounded-2xl' },
+      });
+    }
+  };
+
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
   const effectivePage = page > totalPages ? totalPages : page;
 
@@ -274,6 +342,7 @@ export default function ListingsTable({
             onOpenListing,
             handleUpdateAvailability,
             updatingAvailability,
+            handleDeleteListing,
           )
         }
         getRowClassName={(l) =>

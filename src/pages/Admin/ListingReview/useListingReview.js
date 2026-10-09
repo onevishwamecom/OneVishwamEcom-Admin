@@ -236,6 +236,36 @@ export default function useListingReview() {
     setActiveModal(null);
   };
 
+  const confirmDelete = async () => {
+    if (!listing) return false;
+    const result = await Swal.fire({
+      title: 'Delete this listing permanently?',
+      text: `"${listing.title || listing.name || 'Untitled'}" will be permanently removed from MongoDB.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      confirmButtonText: 'Yes, Delete',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+      customClass: {
+        popup: 'rounded-2xl',
+        confirmButton: 'rounded-xl text-sm font-bold px-4 py-2.5',
+        cancelButton: 'rounded-xl text-sm font-bold px-4 py-2.5',
+      },
+    });
+
+    if (!result.isConfirmed) return false;
+
+    try {
+      await adminApi.deleteListing(type, id);
+      showToast('Deleted', 'The listing has been permanently removed.');
+      return true;
+    } catch {
+      showErrorToast('Failed', 'Could not delete the listing.');
+      return false;
+    }
+  };
+
   const images =
     Array.isArray(listing?.images) && listing.images.length > 0
       ? listing.images
@@ -269,5 +299,6 @@ export default function useListingReview() {
     confirmCancel,
     confirmOverride,
     confirmSoldOut,
+    confirmDelete,
   };
 }

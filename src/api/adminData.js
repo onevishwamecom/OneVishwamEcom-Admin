@@ -136,9 +136,11 @@ function invalidateDataCaches() {
     'categories',
     'activity',
     'stats',
+    'userStats',
   ].forEach((key) => cache.remove(ns, key));
   cache.removeByPrefix(ns, 'listing:');
   cache.removeByPrefix(ns, 'contributor:');
+  cache.removeByPrefix(ns, 'users:');
   // Clear in-flight promises to prevent stale data on immediate refetch
   clearInflight();
   inFlight.clear();
@@ -193,12 +195,24 @@ async function updateAvailabilityStatus(type, id, availabilityStatus) {
   return item?.item ? normalizeListing(item.item) : null;
 }
 
+async function getUserStats() {
+  return dedupe('userStats', () => client.get('/admin/users/stats').then(unwrap));
+}
+
+async function getUsers(params = {}) {
+  const query = new URLSearchParams(params).toString();
+  const key = `users:${query}`;
+  return dedupe(key, () => client.get(`/admin/users?${query}`).then(unwrap));
+}
+
 export const adminApi = {
   getStats,
   getContributors,
   getContributorDetail,
   getListings,
   getListing,
+  getUserStats,
+  getUsers,
   approveListing,
   requestChanges,
   cancelListing,

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '../../../store/adminSlice';
 import { ADMIN_AUTH } from '../../../config/adminAuth';
@@ -7,12 +7,18 @@ import AdminLoginForm from './components/AdminLoginForm';
 function AdminLogin() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, loading, error, clearError } = useAdminAuth();
+  const { login, loading, error, clearError, isAdminLoggedIn } = useAdminAuth();
   const [form, setForm] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
 
   const from = location.state?.from?.pathname || '/admin';
+
+  useEffect(() => {
+    if (isAdminLoggedIn) {
+      navigate(from, { replace: true });
+    }
+  }, [isAdminLoggedIn, navigate, from]);
 
   function validate() {
     const e = {};
