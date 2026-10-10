@@ -18,6 +18,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import client from '../../api/client';
+import { uploadMediaToStorage, deleteMediaFromStorage } from '../../services/storageService';
 
 const MAX_VIDEO_SIZE = 10 * 1024 * 1024;
 const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo'];
@@ -95,7 +96,7 @@ function SortableMediaItem({
         )}
       </div>
 
-      <div className="absolute top-1 right-1 flex gap-1 pointer-events-none">
+      <div className="absolute top-1 right-1 z-30 flex gap-1 pointer-events-auto">
         {!isFirst && (
           <button
             type="button"
@@ -270,32 +271,25 @@ export default function SortableMediaList({
 
     if (onUploadProgress) onUploadProgress(fileId, 0);
 
-    const formData = new FormData();
-    const fieldName = isVideo ? 'video' : 'images';
-    formData.append(fieldName, file);
-
     try {
-      const response = await client.post(`/upload/${isVideo ? 'video' : 'images'}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        onUploadProgress: (progressEvent) => {
-          if (onUploadProgress) {
-            const progress = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 1));
-            onUploadProgress(fileId, progress);
-          }
+      const downloadUrl = await uploadMediaToStorage({
+        category: 'properties',
+        productId: `item_${Date.now()}`,
+        mediaType: isVideo ? 'videos' : 'images',
+        file,
+        onProgress: (progress) => {
+          if (onUploadProgress) onUploadProgress(fileId, progress);
         },
       });
 
-      const backendResponse = response.data;
-      const urls = backendResponse?.data?.[isVideo ? 'videos' : 'images'] || backendResponse?.[isVideo ? 'videos' : 'images'] || [];
-
-      if (urls.length > 0) {
+      if (downloadUrl) {
         setItems((prev) => prev.map((item) =>
           item.id === tempId
-            ? { ...item, id: urls[0], url: urls[0], preview: undefined, file: undefined, isUploading: false, isExisting: true }
+            ? { ...item, id: downloadUrl, url: downloadUrl, preview: undefined, file: undefined, isUploading: false, isExisting: true }
             : item
         ));
       } else {
-        throw new Error('No URL in upload response');
+        throw new Error('No download URL returned from Firebase Storage');
       }
     } catch (err) {
       setItems((prev) => prev.filter((item) => item.id !== tempId));
@@ -339,6 +333,9 @@ export default function SortableMediaList({
       if (item?.preview && !item.url) {
         URL.revokeObjectURL(item.preview);
       }
+      if (item?.url && item.url.includes('firebasestorage')) {
+        deleteMediaFromStorage(item.url);
+      }
       return prev.filter((i) => i.id !== id);
     });
   }, []);
@@ -354,13 +351,50 @@ export default function SortableMediaList({
     });
   }, []);
 
+  const prevUrlsRef = useRef((media || []).map((m) => m.url).filter(Boolean));
+
+  // Sync items when parent media prop changes
   useEffect(() => {
-    const finalMedia = items.map((item) => ({
-      id: item.id,
-      type: item.type,
-      url: item.url,
-    }));
-    onMediaChange(finalMedia);
+    const parentUrls = (media || []).map((m) => m.url).filter(Boolean);
+    const currentItemUrls = items.map((i) => i.url).filter(Boolean);
+
+    if (
+      !items.some((i) => i.isUploading) &&
+      (parentUrls.length !== currentItemUrls.length ||
+        parentUrls.some((u, idx) => u !== currentItemUrls[idx]))
+    ) {
+      const newItems = (media || []).map((m, i) => ({
+        id: m.id || `media-${i}-${Date.now()}`,
+        type: m.type || (m.url?.startsWith('video') || m.preview?.startsWith('blob:video') ? 'video' : 'image'),
+        url: m.url,
+        preview: m.preview,
+        file: m.file,
+        isExisting: !!m.url && !m.preview,
+      }));
+      setItems(newItems);
+      prevUrlsRef.current = parentUrls;
+    }
+  }, [media]);
+
+  useEffect(() => {
+    const currentUrls = items.map((item) => item.url).filter(Boolean);
+    const prevUrls = prevUrlsRef.current;
+
+    const hasChanged =
+      currentUrls.length !== prevUrls.length ||
+      currentUrls.some((url, index) => url !== prevUrls[index]);
+
+    if (hasChanged) {
+      prevUrlsRef.current = currentUrls;
+      const finalMedia = items.map((item) => ({
+        id: item.id,
+        type: item.type,
+        url: item.url,
+      }));
+      if (onMediaChange) {
+        onMediaChange(finalMedia);
+      }
+    }
   }, [items, onMediaChange]);
 
   useEffect(() => {

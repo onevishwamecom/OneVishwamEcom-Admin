@@ -4,7 +4,7 @@ import Swal from 'sweetalert2';
 import { adminApi } from '../../../api/adminData';
 import cache, { adminNamespace, CACHE_TTL } from '../../../services/cache/cacheService';
 import { getCategoryById } from '../../../mock/categories';
-import { COMMON_FIELDS, CATEGORY_SPECIFIC_FIELDS } from './constants';
+import { COMMON_FIELDS, getCategoryFields } from './constants';
 
 function showToast(title, text) {
   Swal.fire({
@@ -32,17 +32,22 @@ function showErrorToast(title, text) {
 
 function buildOverrideForm(base, type) {
   if (!base) return {};
-  const form = {};
+  const form = { ...(base.details || {}), ...base };
   COMMON_FIELDS.forEach((f) => {
-    form[f.key] = base[f.key] ?? '';
+    form[f.key] = base[f.key] ?? base.details?.[f.key] ?? form[f.key] ?? '';
   });
-  form.subcategory = base.subcategory || base.subCategory || '';
+  form.subcategory = base.subcategory || base.subCategory || base.details?.subcategory || '';
   form.priceType = base.priceType || 'fixed';
+  form.videoUrl = base.videoUrl || base.video || base.details?.videoUrl || '';
+  form.pdfUrl = base.pdfUrl || base.brochure || base.details?.pdfUrl || '';
+  form.documents = Array.isArray(base.documents)
+    ? [...base.documents]
+    : (Array.isArray(base.details?.documents) ? [...base.details.documents] : []);
 
   const typeKey = type || base._type || base.category || 'properties';
-  const catFields = CATEGORY_SPECIFIC_FIELDS[typeKey] || CATEGORY_SPECIFIC_FIELDS[base.category] || [];
+  const catFields = getCategoryFields(typeKey, form.subcategory);
   catFields.forEach((f) => {
-    form[f.key] = base[f.key] ?? '';
+    form[f.key] = base[f.key] ?? base.details?.[f.key] ?? form[f.key] ?? '';
   });
 
   return form;
