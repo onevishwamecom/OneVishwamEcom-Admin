@@ -23,15 +23,22 @@ export const COMMON_FIELDS = [
 
 export const SUBCATEGORIES = {
   properties: [
-    'Flat',
-    'Villa',
-    'Plot',
+    'Residential',
+    'Flat / Villa',
+    'Independent House',
+    'Plot / Land',
+    'Agricultural',
+    'Commercial',
+    'Industrial',
   ],
   'real-estate': [
-    'Apartment',
-    'Villa',
-    'Plot',
-    'Flat'
+    'Residential',
+    'Flat / Villa',
+    'Independent House',
+    'Plot / Land',
+    'Agricultural',
+    'Commercial',
+    'Industrial',
   ],
   vehicles: [
     'Car',
@@ -114,6 +121,19 @@ export const SUBCATEGORIES = {
     'AC Repair',
     'Painting',
     'Pest Control',
+  ],  bedding: [
+    'Mattress',
+    'Pillow',
+    'Bedsheet & Linen',
+    'Comforter & Blanket',
+    'Protector & Cushion',
+  ],
+  electronics: [
+    'Mobile & Tablet',
+    'Laptop & Computer',
+    'TV & Audio',
+    'Home Appliances',
+    'Smart Wearables',
   ],
 };
 
@@ -212,6 +232,19 @@ export const CATEGORY_SPECIFIC_FIELDS = {
     { key: 'serviceType', label: 'Service Type', type: 'text', placeholder: 'e.g. Plumbing, Electrical, AC Repair' },
     { key: 'experience', label: 'Years of Experience', type: 'number', placeholder: 'e.g. 3' },
   ],
+  bedding: [
+    { key: 'material', label: 'Material / Fill', type: 'text', placeholder: 'e.g. Memory Foam, Latex, Organic Cotton' },
+    { key: 'size', label: 'Bed / Mattress Size', type: 'select', options: ['Single', 'Double', 'Queen', 'King', 'Custom'] },
+    { key: 'thickness', label: 'Thickness', type: 'select', options: ['4 Inches', '6 Inches', '8 Inches', '10 Inches', '12 Inches'] },
+    { key: 'firmness', label: 'Firmness Level', type: 'select', options: ['Soft', 'Medium Soft', 'Medium Firm', 'Firm', 'Dual Firm / Orthopedic'] },
+    { key: 'brand', label: 'Brand', type: 'text', placeholder: 'e.g. Vishwam Comfort, Sleepwell' },
+  ],
+  electronics: [
+    { key: 'brand', label: 'Brand', type: 'text', placeholder: 'e.g. Apple, Samsung, Sony, Dell' },
+    { key: 'model', label: 'Model Name / No.', type: 'text', placeholder: 'e.g. iPhone 15 Pro, XPS 15' },
+    { key: 'condition', label: 'Condition', type: 'select', options: ['New', 'Refurbished', 'Used - Like New', 'Used - Good', 'Used - Fair'] },
+    { key: 'warranty', label: 'Warranty Details', type: 'text', placeholder: 'e.g. 1 Year Official Warranty' },
+  ],
 };
 
 export const PRICE_UNITS = [
@@ -234,7 +267,127 @@ export const PRICE_SUFFIXES_BY_CATEGORY = {
   finance: ['', '% p.a.', '/ year'],
   services: ['', '/ visit', '/ hour', '/ job'],
   service: ['', '/ visit', '/ hour', '/ job'],
+  bedding: ['', 'Onwards', '/ piece', '/ set'],
+  electronics: ['', 'Onwards', 'EMI Available', '/ unit'],
 };
 
 export const OVERRIDE_INPUT_CLASS =
   'w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm outline-none focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/10 focus:bg-white transition-all';
+
+export function getCategoryFields(typeKey, subcategory = '') {
+  const cleanType = String(typeKey || '').toLowerCase().trim();
+  const cleanSub = String(subcategory || '').toLowerCase().trim();
+
+  if (cleanType === 'properties' || cleanType === 'real-estate') {
+    if (cleanSub.includes('plot') || cleanSub.includes('land')) {
+      return [
+        { key: 'propertyName', label: 'Property / Project Name', type: 'text', placeholder: 'e.g. Green Meadows Layout' },
+        { key: 'dimensions', label: 'Dimensions (Length x Width / Sq.ft)', type: 'text', placeholder: 'e.g. 30 x 40 ft (1,200 sq.ft.)' },
+        { key: 'facing', label: 'Property Facing', type: 'select', options: ['East', 'West', 'North', 'South', 'Other'] },
+        { key: 'cornerPlot', label: 'Corner Plot?', type: 'select', options: ['Yes', 'No', 'Other'] },
+        { key: 'approvedLayout', label: 'Approved Layout', type: 'select', options: ['Yes', 'No'] },
+        { key: 'boundaryWall', label: 'Boundary Wall / Fencing Available?', type: 'select', options: ['Yes', 'No'] },
+        { key: 'approvalAuthority', label: 'Approval Authority', type: 'select', options: ['BDA', 'BBMP', 'BMRDA', 'Panchayat', 'RERA', 'Other'] },
+        { key: 'gatedCommunity', label: 'Gated Community', type: 'select', options: ['Yes', 'No'] },
+        { key: 'loanApproved', label: 'Bank Loan Approved', type: 'select', options: ['Yes', 'No'] },
+        { key: 'projectCount', label: 'Total Projects', type: 'number', placeholder: 'e.g. 120' },
+        { key: 'totalUnits', label: 'Total Units / Plots', type: 'text', placeholder: 'e.g. 50 Plots' },
+        { key: 'availableUnits', label: 'Available Plots', type: 'number', placeholder: 'e.g. 12' },
+      ];
+    }
+    if (cleanSub.includes('flat') || cleanSub.includes('villa') || cleanSub.includes('house') || cleanSub.includes('apartment')) {
+      return [
+        { key: 'projectName', label: 'Project / Society / House Name', type: 'text', placeholder: 'e.g. Sobha Dream Acres / Prestige Golfshire' },
+        { key: 'bhk', label: 'Configuration (BHK)', type: 'select', options: ['1 RK', '1 BHK', '2 BHK', '3 BHK', '4 BHK', 'Other'] },
+        { key: 'area_sqft', label: 'Super Built-up Area (sq. ft.)', type: 'text', placeholder: 'e.g. 1,450 sq.ft.' },
+        { key: 'floor', label: 'Floor', type: 'text', placeholder: 'e.g. 20th of 20 Floors' },
+        { key: 'floors', label: 'Floors / Blocks', type: 'text', placeholder: 'e.g. B+G+11 Floors · 3 Towers · 6 Blocks' },
+        { key: 'towers', label: 'Towers', type: 'text', placeholder: 'e.g. 3 Towers' },
+        { key: 'extraRoom', label: 'Extra Room', type: 'text', placeholder: 'e.g. Pooja Room, Study' },
+        { key: 'projectCount', label: 'Total Projects', type: 'number', placeholder: 'e.g. 120' },
+        { key: 'totalUnits', label: 'Total Units', type: 'text', placeholder: 'e.g. 200 Units' },
+        { key: 'availableUnits', label: 'Available Units', type: 'number', placeholder: 'e.g. 5' },
+        { key: 'approvalAuthority', label: 'Approval Authority', type: 'select', options: ['BDA', 'BBMP', 'BMRDA', 'RERA', 'EOI', 'Other'] },
+        { key: 'loanApproved', label: 'Bank Loan Approved', type: 'select', options: ['Yes', 'No'] },
+        { key: 'facing', label: 'Property Facing', type: 'select', options: ['North', 'South', 'East', 'West', 'Other'] },
+        { key: 'bathrooms', label: 'Bathrooms', type: 'select', options: ['1', '2', '3', '4+'] },
+        { key: 'balconies', label: 'Balconies', type: 'select', options: ['1', '2', '3+'] },
+        { key: 'furnishing', label: 'Furnishing Status', type: 'select', options: ['Unfurnished', 'Semi-furnished', 'Fully furnished'] },
+        { key: 'possession', label: 'Possession Status', type: 'select', options: ['Ready to Move In', 'Resale', 'Under Construction'] },
+        { key: 'propertyAge', label: 'Property Age', type: 'text', placeholder: 'e.g. Brand New / 2 Years' },
+        { key: 'parking', label: 'Parking Space', type: 'select', options: ['None', 'Two Wheeler', 'One Car', 'Multiple Cars', 'Other'] },
+        { key: 'gatedCommunity', label: 'Gated Community?', type: 'select', options: ['Yes', 'No'] },
+        { key: 'garden', label: 'Garden / Private Terrace', type: 'select', options: ['Yes', 'No', 'Maybe'] },
+        { key: 'maintenance', label: 'Maintenance Charges Applicable?', type: 'select', options: ['Yes', 'No'] },
+      ];
+    }
+    if (cleanSub.includes('agricultural') || cleanSub.includes('farm')) {
+      return [
+        { key: 'totalLandExtent', label: 'Total Land Extent (Acres / Guntas)', type: 'text', placeholder: 'e.g. 4 Acres 20 Guntas' },
+        { key: 'surveyNumber', label: 'Survey Number', type: 'text', placeholder: 'e.g. Sy No. 124/2B' },
+        { key: 'landType', label: 'Type of Land', type: 'select', options: ['Agricultural', 'Converted', 'Plantation', 'Farm land', 'Other'] },
+        { key: 'roadAccess', label: 'Road Access & Road Width', type: 'text', placeholder: 'e.g. Tar Road with 30 ft width frontage' },
+        { key: 'waterAvailability', label: 'Water Availability', type: 'select', options: ['Borewell', 'Lake', 'Rain-fed', 'Canal', 'None', 'Other'] },
+        { key: 'electricity', label: 'Electricity Available?', type: 'select', options: ['Yes', 'No'] },
+        { key: 'farmhouse', label: 'Farmhouse / Shed Available?', type: 'select', options: ['Yes', 'No'] },
+        { key: 'boundaryWall', label: 'Fencing / Boundary Wall?', type: 'select', options: ['Yes', 'No'] },
+        { key: 'currentCrop', label: 'Current Crop / Plantation', type: 'text', placeholder: 'e.g. Coconut, Arecanut, Mango, Fallow' },
+        { key: 'soilType', label: 'Soil Type', type: 'select', options: ['Red Soil', 'Black Soil', 'Other'] },
+        { key: 'loanApproved', label: 'Bank Loan Approved', type: 'select', options: ['Yes', 'No'] },
+      ];
+    }
+    if (cleanSub.includes('commercial') || cleanSub.includes('office') || cleanSub.includes('shop') || cleanSub.includes('showroom')) {
+      return [
+        { key: 'commercialType', label: 'Commercial Property Type', type: 'select', options: ['Office', 'Shop', 'Showroom', 'Restaurant space', 'Commercial building', 'Warehouse', 'Other'] },
+        { key: 'carpetArea', label: 'Carpet Area (sq. ft.)', type: 'text', placeholder: 'e.g. 2,200 sq.ft.' },
+        { key: 'area_sqft', label: 'Built-up Area (sq. ft.)', type: 'text', placeholder: 'e.g. 2,800 sq.ft.' },
+        { key: 'floors', label: 'Total Floors in Building', type: 'select', options: ['0', '1', '2', '3', 'Other'] },
+        { key: 'facing', label: 'Property Facing', type: 'select', options: ['North', 'South', 'East', 'West', 'Other'] },
+        { key: 'furnishing', label: 'Furnishing / Interior Status', type: 'select', options: ['Semi Furnished', 'Fully Furnished', 'No Furnishing'] },
+        { key: 'washrooms', label: 'Washrooms Available', type: 'select', options: ['Yes', 'No'] },
+        { key: 'lift', label: 'Lift Available', type: 'select', options: ['Yes', 'No'] },
+        { key: 'powerBackup', label: 'Power Backup Available', type: 'select', options: ['Yes', 'No'] },
+        { key: 'parking', label: 'Parking Capacity', type: 'select', options: ['None', 'Two wheelers', 'Few Four wheelers', 'Other'] },
+        { key: 'mainRoadFrontage', label: 'Main-Road Frontage', type: 'select', options: ['Yes', 'No', 'Other'] },
+        { key: 'occupancy', label: 'Currently Occupied or Vacant?', type: 'select', options: ['occupied', 'Vacant', 'Other'] },
+        { key: 'existingRentalIncome', label: 'Existing Rental Income (if applicable)', type: 'text', placeholder: "e.g. ₹1,50,000 / month (or 'N/A')" },
+        { key: 'maintenance', label: 'Maintenance Charges Applicable?', type: 'select', options: ['Yes', 'No'] },
+      ];
+    }
+    if (cleanSub.includes('industrial') || cleanSub.includes('factory') || cleanSub.includes('warehouse')) {
+      return [
+        { key: 'industrialType', label: 'Type of Industrial Property', type: 'select', options: ['Industrial land', 'Factory', 'Warehouse', 'Industrial shed', 'Manufacturing unit', 'Logistics facility', 'Cold storage', 'Other'] },
+        { key: 'propertyStatus', label: 'Property Status', type: 'select', options: ['Vacant land', 'Ready to occupy', 'Operational', 'Under construction', 'Closed/non-operational', 'Other'] },
+        { key: 'totalLandArea', label: 'Total Land Area', type: 'text', placeholder: 'e.g. 2 Acres or 45,000 sq.ft.' },
+        { key: 'area_sqft', label: 'Total Built-up Area', type: 'text', placeholder: 'e.g. 25,000 sq.ft.' },
+        { key: 'shedDimensions', label: 'Shed / Factory Dimensions', type: 'text', placeholder: 'e.g. 100 x 200 ft (Height: 28 ft)' },
+        { key: 'floors', label: 'Number of Floors (if any)', type: 'text', placeholder: 'e.g. Ground Floor only / G+1 Mezzanine' },
+        { key: 'approachRoadWidth', label: 'Approach Road Width', type: 'text', placeholder: 'e.g. 60 ft or 80 ft Main Road' },
+        { key: 'roadFrontage', label: 'Road Frontage Available?', type: 'select', options: ['Yes', 'No'] },
+        { key: 'heavyVehicleAccess', label: 'Can Heavy Vehicles / Containers Access?', type: 'select', options: ['Yes', 'No'] },
+        { key: 'powerLoad', label: 'Power Availability / Sanctioned Load', type: 'select', options: ['Yes', 'No'] },
+        { key: 'waterSupply', label: 'Water Sources Available', type: 'select', options: ['Borewell', 'Government connection', 'Tanker supply', 'Not available', 'Other'] },
+        { key: 'approvalAuthority', label: 'Approval Authority', type: 'select', options: ['KIADB', 'KSPCB', 'BDA', 'BBMP', 'Other'] },
+        { key: 'loanApproved', label: 'Bank Loan Approved', type: 'select', options: ['Yes', 'No'] },
+      ];
+    }
+    // Default / Residential overview & specifications
+    return [
+      { key: 'propertyName', label: 'Property / Project Name', type: 'text', placeholder: 'e.g. Green Meadows Residential Layout' },
+      { key: 'dimensions', label: 'Dimensions: Length x Width', type: 'text', placeholder: 'e.g. 30 x 40 ft (1,200 sq.ft.)' },
+      { key: 'facing', label: 'Property Facing', type: 'select', options: ['East', 'West', 'North', 'South', 'Other'] },
+      { key: 'cornerPlot', label: 'Corner Plot?', type: 'select', options: ['Yes', 'No', 'Other'] },
+      { key: 'approvedLayout', label: 'Approved Layout', type: 'select', options: ['Yes', 'No'] },
+      { key: 'boundaryWall', label: 'Boundary Wall / Fencing Available?', type: 'select', options: ['Yes', 'No'] },
+      { key: 'approvalAuthority', label: 'Approval Authority', type: 'select', options: ['BDA', 'BBMP', 'BMRDA', 'Panchayat', 'RERA', 'Other'] },
+      { key: 'loanApproved', label: 'Bank Loan Approved', type: 'select', options: ['Yes', 'No'] },
+      { key: 'bhk', label: 'BHK Configuration', type: 'text', placeholder: 'e.g. 2, 3 & 4 BHK' },
+      { key: 'bathrooms', label: 'Bathrooms', type: 'select', options: ['1', '2', '3', '4+'] },
+      { key: 'furnishing', label: 'Furnishing', type: 'select', options: ['Furnished', 'Semi-Furnished', 'Unfurnished'] },
+      { key: 'floor', label: 'Floor', type: 'text', placeholder: 'e.g. 2nd Floor' },
+      { key: 'parking', label: 'Parking', type: 'text', placeholder: 'e.g. 1 Covered + 1 Open' },
+    ];
+  }
+
+  return CATEGORY_SPECIFIC_FIELDS[cleanType] || [];
+}

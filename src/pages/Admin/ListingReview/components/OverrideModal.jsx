@@ -1,8 +1,9 @@
 import { useState, useMemo, useCallback } from 'react';
 import AdminModal from '../../../../components/Admin/AdminModal';
 import SortableMediaList from '../../../../components/ui/SortableMediaList';
-import { SUBCATEGORIES, CATEGORY_SPECIFIC_FIELDS, PRICE_UNITS, PRICE_SUFFIXES_BY_CATEGORY, OVERRIDE_INPUT_CLASS } from '../constants';
+import { SUBCATEGORIES, CATEGORY_SPECIFIC_FIELDS, PRICE_UNITS, PRICE_SUFFIXES_BY_CATEGORY, OVERRIDE_INPUT_CLASS, getCategoryFields } from '../constants';
 import client from '../../../../api/client';
+import { uploadMediaToStorage, deleteMediaFromStorage } from '../../../../services/storageService';
 
 export default function OverrideModal({
   open,
@@ -17,7 +18,10 @@ export default function OverrideModal({
 }) {
   const typeKey = category?.id || listing?._type || listing?.category || 'properties';
   const subcategoryList = SUBCATEGORIES[typeKey] || SUBCATEGORIES[listing?.category] || [];
-  const catFields = CATEGORY_SPECIFIC_FIELDS[typeKey] || CATEGORY_SPECIFIC_FIELDS[listing?.category] || [];
+  const catFields = useMemo(
+    () => getCategoryFields(typeKey, overrideForm?.subcategory || listing?.subcategory || listing?.subCategory),
+    [typeKey, overrideForm?.subcategory, listing?.subcategory, listing?.subCategory]
+  );
   
   const [saveLoading, setSaveLoading] = useState(false);
   const [pendingUploads, setPendingUploads] = useState(0);
@@ -31,36 +35,104 @@ export default function OverrideModal({
   })), [overrideImages]);
 
   const handleMediaChange = useCallback((newMedia) => {
-    const urls = newMedia.filter(m => m.url).map(m => m.url);
-    setOverrideImages(urls);
+    const newUrls = newMedia.filter(m => m.url).map(m => m.url);
+    setOverrideImages(prev => {
+      const prevUrls = prev || [];
+      if (
+        prevUrls.length === newUrls.length &&
+        prevUrls.every((u, idx) => u === newUrls[idx])
+      ) {
+        return prev;
+      }
+      const removedUrls = prevUrls.filter(url => !newUrls.includes(url) && url?.includes('firebasestorage'));
+      removedUrls.forEach(deleteMediaFromStorage);
+      return newUrls;
+    });
   }, [setOverrideImages]);
 
   const handleFileUpload = useCallback(async (file) => {
-    const formData = new FormData();
-    formData.append('images', file);
-    
     setPendingUploads(prev => prev + 1);
     
     try {
-      const response = await client.post('/upload/images', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const mediaType = file.type?.startsWith('video/') ? 'videos' : 'images';
+      const productId = listing?._id || listing?.id || `item_${Date.now()}`;
+      const downloadUrl = await uploadMediaToStorage({
+        category: typeKey,
+        productId,
+        mediaType,
+        file,
       });
-      const urls = response.data?.data?.images || response.data?.images || [];
-      if (urls.length > 0) {
-        setOverrideImages(prev => [...prev, urls[0]]);
+
+      if (downloadUrl) {
+        setOverrideImages(prev => [...prev, downloadUrl]);
       }
     } catch (err) {
-      alert('Failed to upload image: ' + (err.response?.data?.message || err.message));
+      alert('Failed to upload image: ' + (err.message || 'Upload error'));
     } finally {
       setPendingUploads(prev => Math.max(0, prev - 1));
     }
-  }, [setOverrideImages]);
+  }, [listing, typeKey, setOverrideImages]);
 
   const handleFileSelect = useCallback((e) => {
     const file = e.target.files[0];
     if (file) handleFileUpload(file);
     e.target.value = '';
   }, [handleFileUpload]);
+
+  const handleVideoUpload = useCallback(async (file) => {
+    if (!file) return;
+    setPendingUploads((prev) => prev + 1);
+    try {
+      const productId = listing?._id || listing?.id || `item_${Date.now()}`;
+      const videoUrl = await uploadMediaToStorage({
+        category: typeKey,
+        productId,
+        mediaType: 'videos',
+        file,
+      });
+      if (videoUrl) {
+        setOverrideForm((prev) => ({
+          ...prev,
+          videoUrl,
+          video: videoUrl,
+          videos: [videoUrl],
+        }));
+      }
+    } catch (err) {
+      alert('Failed to upload video: ' + (err.message || 'Upload error'));
+    } finally {
+      setPendingUploads((prev) => Math.max(0, prev - 1));
+    }
+  }, [listing, typeKey, setOverrideForm]);
+
+  const handleDocumentUpload = useCallback(async (file) => {
+    if (!file) return;
+    setPendingUploads((prev) => prev + 1);
+    try {
+      const productId = listing?._id || listing?.id || `item_${Date.now()}`;
+      const docUrl = await uploadMediaToStorage({
+        category: typeKey,
+        productId,
+        mediaType: 'documents',
+        file,
+      });
+      if (docUrl) {
+        setOverrideForm((prev) => {
+          const currentDocs = Array.isArray(prev.documents) ? prev.documents : (Array.isArray(listing?.documents) ? listing.documents : []);
+          return {
+            ...prev,
+            pdfUrl: docUrl,
+            brochure: docUrl,
+            documents: Array.from(new Set([...currentDocs, docUrl])),
+          };
+        });
+      }
+    } catch (err) {
+      alert('Failed to upload document: ' + (err.message || 'Upload error'));
+    } finally {
+      setPendingUploads((prev) => Math.max(0, prev - 1));
+    }
+  }, [listing, typeKey, setOverrideForm]);
 
   const handleSave = useCallback(async () => {
     setSaveLoading(true);
@@ -284,7 +356,7 @@ export default function OverrideModal({
                   {f.type === 'select' ? (
                     <select
                       id={`override-${f.key}`}
-                      value={overrideForm[f.key] ?? listing[f.key] ?? ''}
+                      value={overrideForm[f.key] ?? listing?.details?.[f.key] ?? listing?.[f.key] ?? ''}
                       onChange={(e) => setOverrideForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
                       className={OVERRIDE_INPUT_CLASS}
                     >
@@ -299,7 +371,7 @@ export default function OverrideModal({
                     <input
                       id={`override-${f.key}`}
                       type={f.type || 'text'}
-                      value={overrideForm[f.key] ?? listing[f.key] ?? ''}
+                      value={overrideForm[f.key] ?? listing?.details?.[f.key] ?? listing?.[f.key] ?? ''}
                       onChange={(e) => setOverrideForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
                       placeholder={f.placeholder || ''}
                       className={OVERRIDE_INPUT_CLASS}
@@ -423,9 +495,136 @@ export default function OverrideModal({
           {pendingUploads > 0 && (
             <p className="mt-2 text-xs text-slate-500 flex items-center gap-2">
               <i className="fa-solid fa-spinner fa-spin text-brand-blue" />
-              Uploading {pendingUploads} image{pendingUploads > 1 ? 's' : ''}...
+              Uploading {pendingUploads} file{pendingUploads > 1 ? 's' : ''}...
             </p>
           )}
+        </div>
+
+        {/* Video Section */}
+        <div className="border-t border-slate-100 pt-5">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+            <i className="fa-solid fa-video text-rose-500" />
+            Video Presentation
+          </h4>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={overrideForm.videoUrl || overrideForm.video || ''}
+                onChange={(e) => setOverrideForm((prev) => ({ ...prev, videoUrl: e.target.value, video: e.target.value, videos: [e.target.value] }))}
+                className={OVERRIDE_INPUT_CLASS}
+                placeholder="Paste Video URL (MP4, YouTube, Vimeo) or upload below"
+              />
+              <input
+                type="file"
+                accept="video/*"
+                className="hidden"
+                id="override-video-upload"
+                onChange={(e) => {
+                  if (e.target.files[0]) handleVideoUpload(e.target.files[0]);
+                  e.target.value = '';
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => document.getElementById('override-video-upload')?.click()}
+                disabled={pendingUploads > 0}
+                className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 transition-colors disabled:opacity-50"
+              >
+                <i className="fa-solid fa-file-video text-rose-500" />
+                Upload Video
+              </button>
+            </div>
+
+            {(overrideForm.videoUrl || overrideForm.video) && (
+              <div className="relative rounded-2xl overflow-hidden bg-black/90 p-2 max-w-md">
+                <video
+                  src={overrideForm.videoUrl || overrideForm.video}
+                  controls
+                  className="w-full h-40 object-cover rounded-xl"
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const currentUrl = overrideForm.videoUrl || overrideForm.video;
+                    if (currentUrl?.includes('firebasestorage')) deleteMediaFromStorage(currentUrl);
+                    setOverrideForm((prev) => ({ ...prev, videoUrl: '', video: '', videos: [] }));
+                  }}
+                  className="absolute top-3 right-3 w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700 shadow-md text-xs"
+                  title="Remove Video"
+                >
+                  <i className="fa-solid fa-trash" />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Supporting Documents & Brochure Section */}
+        <div className="border-t border-slate-100 pt-5">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+            <i className="fa-solid fa-file-pdf text-amber-500" />
+            Documents & Brochure (PDF / Docs)
+          </h4>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.xls,.xlsx"
+                className="hidden"
+                id="override-doc-upload"
+                onChange={(e) => {
+                  if (e.target.files[0]) handleDocumentUpload(e.target.files[0]);
+                  e.target.value = '';
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => document.getElementById('override-doc-upload')?.click()}
+                disabled={pendingUploads > 0}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-slate-300 hover:border-brand-blue hover:text-brand-blue text-xs font-bold text-slate-700 transition-colors disabled:opacity-50"
+              >
+                <i className="fa-solid fa-cloud-arrow-up text-amber-500" />
+                Upload Document / Brochure
+              </button>
+            </div>
+
+            {/* List attached documents & brochure */}
+            {((overrideForm.pdfUrl || overrideForm.brochure) || (Array.isArray(overrideForm.documents) && overrideForm.documents.length > 0)) && (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {[
+                  ...(overrideForm.pdfUrl || overrideForm.brochure ? [{ url: overrideForm.pdfUrl || overrideForm.brochure, label: 'Brochure (PDF)', isBrochure: true }] : []),
+                  ...(Array.isArray(overrideForm.documents) ? overrideForm.documents.map((d, i) => ({ url: d, label: `Document ${i + 1}`, isBrochure: false })) : []),
+                ].map((docItem, idx) => (
+                  <div key={`${docItem.url}-${idx}`} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700">
+                    <i className="fa-solid fa-file-pdf text-red-500" />
+                    <a href={docItem.url} target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-brand-blue truncate max-w-[180px]">
+                      {docItem.label}
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (docItem.url.includes('firebasestorage')) deleteMediaFromStorage(docItem.url);
+                        if (docItem.isBrochure) {
+                          setOverrideForm((prev) => ({ ...prev, pdfUrl: '', brochure: '' }));
+                        } else {
+                          setOverrideForm((prev) => ({
+                            ...prev,
+                            documents: (prev.documents || []).filter((u) => u !== docItem.url),
+                          }));
+                        }
+                      }}
+                      className="text-slate-400 hover:text-red-500 transition-colors ml-1"
+                      title="Remove document"
+                    >
+                      <i className="fa-solid fa-xmark text-xs" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </AdminModal>
