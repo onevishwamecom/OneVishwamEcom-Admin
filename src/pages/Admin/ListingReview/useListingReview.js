@@ -245,7 +245,7 @@ export default function useListingReview() {
     if (!listing) return false;
     const result = await Swal.fire({
       title: 'Delete this listing permanently?',
-      text: `"${listing.title || listing.name || 'Untitled'}" will be permanently removed from MongoDB.`,
+      text: `"${listing.title || 'Untitled'}" will be permanently removed from MongoDB.`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#dc2626',

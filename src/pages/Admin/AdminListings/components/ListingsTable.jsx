@@ -19,7 +19,7 @@ const COLUMNS = [
 
 function renderListingRow(l, contributorName, category, isUnseen, onOpenListing, onUpdateAvailability, updatingAvailability, onDeleteListing) {
   const unseen = isUnseen(l._id || l.id);
-  const title = l.title || l.name || l.brand || 'Untitled';
+  const title = l.title || l.brand || 'Untitled';
   const availability = l.availabilityStatus || 'available';
   const isSoldOut = availability === 'sold_out';
 
@@ -165,7 +165,7 @@ export default function ListingsTable({
   const searchLower = debouncedSearchQuery.toLowerCase();
   const filtered = listings.filter(
     (l) => {
-      const title = (l.title || l.name || l.brand || '').toLowerCase();
+      const title = (l.title || l.brand || '').toLowerCase();
       const contributor = (contributorNameById[l.contributorId] || l.lister?.name || '').toLowerCase();
       const catLabel = (categoryById[l._type]?.label || l._type || '').toLowerCase();
       const location = (l.location || l.area || l.city || '').toLowerCase();
@@ -245,7 +245,7 @@ export default function ListingsTable({
 
   const handleDeleteListing = async (listing) => {
     const id = listing._id || listing.id;
-    const title = listing.title || listing.name || listing.brand || 'Untitled';
+    const title = listing.title || listing.brand || 'Untitled';
     const result = await Swal.fire({
       title: 'Delete this item?',
       text: `"${title}" will be permanently removed from MongoDB.`,
