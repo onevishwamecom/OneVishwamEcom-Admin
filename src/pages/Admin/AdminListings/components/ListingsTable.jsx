@@ -315,7 +315,7 @@ export default function ListingsTable({
             className="rounded-md border border-slate-200 py-1.5 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
           >
             <option value="">All Categories</option>
-            <option value="properties">Real Estate</option>
+            <option value="properties">Properties</option>
             <option value="vehicles">Vehicles</option>
             <option value="groceries">Groceries</option>
             <option value="garments">Garments</option>

@@ -27,7 +27,7 @@ export const categoryIdOf = (typeKey) => TYPE_TO_CATEGORY[typeKey] || typeKey;
 export const CATEGORIES = [
   {
     id: 'properties',
-    label: 'Real Estate',
+    label: 'Properties',
     icon: 'fa-house-chimney',
     gradient: 'from-brand-blue to-brand-blue/70',
     fields: [
