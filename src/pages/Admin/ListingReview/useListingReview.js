@@ -188,6 +188,12 @@ export default function useListingReview() {
 
   const confirmOverride = async () => {
     const payload = { ...overrideForm, images: overrideImages };
+    if (payload.possessionStatus !== undefined) {
+      payload.possession = payload.possessionStatus;
+      if (payload.details && typeof payload.details === "object") {
+        payload.details.possessionStatus = payload.possessionStatus;
+      }
+    }
     try {
       const updated = await adminApi.updateListing(type, id, payload);
       if (updated) {

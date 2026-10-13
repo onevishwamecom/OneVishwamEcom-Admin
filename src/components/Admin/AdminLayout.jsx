@@ -185,7 +185,7 @@ function AdminLayout() {
       </aside>
 
       {/* Main column */}
-      <div className="flex flex-1 flex-col lg:ml-64 md:ml-20 ml-0 transition-all duration-300">
+      <div className="flex flex-1 flex-col min-w-0 lg:ml-64 md:ml-20 ml-0 transition-all duration-300 overflow-x-hidden">
         {/* Top bar */}
         <header className="sticky top-0 z-30 glass border-b border-slate-200/60">
           <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8 ml-12 lg:ml-0">
@@ -214,7 +214,7 @@ function AdminLayout() {
         {/* Content */}
         <main
           id="admin-main-content"
-          className="flex-1 bg-mesh-gradient bg-slate-50/95"
+          className="flex-1 min-w-0 w-full bg-mesh-gradient bg-slate-50/95 overflow-x-hidden"
           role="main"
           tabIndex={-1}
         >

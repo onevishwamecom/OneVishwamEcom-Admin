@@ -259,8 +259,8 @@ export function DataTable({
   const pagedRows = rows.slice(startIndex, endIndex);
 
   return (
-    <div className={`bg-white rounded-2xl border border-slate-100 shadow-card overflow-hidden ${className}`}>
-      <div className="overflow-x-auto touch-pan-y">
+    <div className={`bg-white rounded-2xl border border-slate-100 shadow-card overflow-hidden max-w-full ${className}`}>
+      <div className="overflow-x-auto touch-pan-y w-full max-w-full">
         <table className="min-w-full text-left text-sm border-collapse">
           <thead>
             <tr className="text-xs uppercase tracking-wider text-slate-400 border-b-2 border-slate-100">

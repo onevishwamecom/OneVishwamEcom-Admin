@@ -76,7 +76,7 @@ async function getContributorDetail(id) {
 
 async function getListings() {
   return dedupe('listings', async () => {
-    const data = unwrap(await client.get('/admin/listings'));
+    const data = unwrap(await client.get('/admin/listings?limit=500'));
     return flattenResults(data).map(normalizeListing);
   });
 }
