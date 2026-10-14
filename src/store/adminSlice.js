@@ -43,7 +43,7 @@ export const adminLoginUser = createAsyncThunk(
         const session = {
           id: adminData?.id || adminData?._id,
           email: adminData?.email || cleanEmail,
-          displayName: adminData?.name || adminData?.fullName || 'Super Admin',
+          displayName: adminData?.fullName || 'Super Admin',
           role: adminData?.role || 'super-admin',
           loggedInAt: new Date().toISOString(),
         };

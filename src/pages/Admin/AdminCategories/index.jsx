@@ -9,11 +9,11 @@ import { CategoriesSkeleton, ErrorState } from '../../../components/skeleton';
 
 const COLUMNS = [
   { key: 'category',  label: 'Category' },
-  { key: 'total',     label: 'Total',            align: 'center' },
-  { key: 'pending',   label: 'Pending',           align: 'center' },
-  { key: 'approved',  label: 'Approved',          align: 'center' },
-  { key: 'changes',   label: 'Changes Required',  align: 'center' },
-  { key: 'cancelled', label: 'Cancelled',         align: 'center' },
+  { key: 'total',     label: 'Total',            align: 'center', className: 'w-px whitespace-nowrap' },
+  { key: 'pending',   label: 'Pending',           align: 'center', className: 'w-px whitespace-nowrap' },
+  { key: 'approved',  label: 'Approved',          align: 'center', className: 'w-px whitespace-nowrap' },
+  { key: 'changes',   label: 'Changes Required',  align: 'center', className: 'w-px whitespace-nowrap' },
+  { key: 'cancelled', label: 'Cancelled',         align: 'center', className: 'w-px whitespace-nowrap' },
 ];
 
 function AdminCategories() {

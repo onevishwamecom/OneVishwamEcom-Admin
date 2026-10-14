@@ -137,6 +137,23 @@ export const SUBCATEGORIES = {
   ],
 };
 
+export const PLOT_POSSESSION_OPTIONS = ["Ready for Registration", "Under Construction"];
+export const STRUCTURAL_POSSESSION_OPTIONS = ["Ready to Occupy", "Under Construction", "Ready to Move In", "Resale"];
+
+export const getPossessionOptionsBySubcategory = (subcategory = "") => {
+  const s = String(subcategory || "").toLowerCase();
+  const isPlot = s.includes("plot") || s.includes("land") || s.includes("agricultural") || s.includes("farm");
+  return isPlot ? PLOT_POSSESSION_OPTIONS : STRUCTURAL_POSSESSION_OPTIONS;
+};
+
+export const POSSESSION_STATUS_OPTIONS = [
+  "Ready to Move In",
+  "Under Construction",
+  "Ready to Occupy",
+  "Ready for Registration",
+  "Resale",
+];
+
 export const CATEGORY_SPECIFIC_FIELDS = {
   properties: [
     { key: 'bhk', label: 'BHK', type: 'text', placeholder: 'e.g. 2, 3 & 4 BHK or EOI' },
@@ -147,7 +164,7 @@ export const CATEGORY_SPECIFIC_FIELDS = {
     { key: 'floors', label: 'Floors / Blocks', type: 'text', placeholder: 'e.g. B+G+11 Floors · 3 Towers · 6 Blocks' },
     { key: 'towers', label: 'Towers', type: 'text', placeholder: 'e.g. 3 Towers' },
     { key: 'approval', label: 'Approval Authority', type: 'text', placeholder: 'e.g. BDA, BBMP, BMRDA, RERA, EOI' },
-    { key: 'possession', label: 'Possession Date / Status', type: 'text', placeholder: 'e.g. Feb 2029 or Ready to Move' },
+    { key: 'possessionStatus', label: 'Possession Status', type: 'select', options: PLOT_POSSESSION_OPTIONS },
     { key: 'loanApproved', label: 'Bank Loan Approved', type: 'select', options: ['Yes', 'No'] },
     { key: 'parking', label: 'Parking', type: 'text', placeholder: 'e.g. 2 Covered + 2 Open' },
     { key: 'extraRoom', label: 'Extra Room', type: 'text', placeholder: 'e.g. Pooja Room, Study' },
@@ -164,7 +181,7 @@ export const CATEGORY_SPECIFIC_FIELDS = {
     { key: 'floors', label: 'Floors / Blocks', type: 'text', placeholder: 'e.g. B+G+11 Floors · 3 Towers · 6 Blocks' },
     { key: 'towers', label: 'Towers', type: 'text', placeholder: 'e.g. 3 Towers' },
     { key: 'approval', label: 'Approval Authority', type: 'text', placeholder: 'e.g. BDA, BBMP, BMRDA, RERA, EOI' },
-    { key: 'possession', label: 'Possession Date / Status', type: 'text', placeholder: 'e.g. Feb 2029 or Ready to Move' },
+    { key: 'possessionStatus', label: 'Possession Status', type: 'select', options: STRUCTURAL_POSSESSION_OPTIONS },
     { key: 'loanApproved', label: 'Bank Loan Approved', type: 'select', options: ['Yes', 'No'] },
     { key: 'parking', label: 'Parking', type: 'text', placeholder: 'e.g. 2 Covered + 2 Open' },
     { key: 'extraRoom', label: 'Extra Room', type: 'text', placeholder: 'e.g. Pooja Room, Study' },
@@ -293,6 +310,7 @@ export function getCategoryFields(typeKey, subcategory = '') {
         { key: 'projectCount', label: 'Total Projects', type: 'number', placeholder: 'e.g. 120' },
         { key: 'totalUnits', label: 'Total Units / Plots', type: 'text', placeholder: 'e.g. 50 Plots' },
         { key: 'availableUnits', label: 'Available Plots', type: 'number', placeholder: 'e.g. 12' },
+        { key: 'possessionStatus', label: 'Possession Status', type: 'select', options: getPossessionOptionsBySubcategory(subcategory) },
       ];
     }
     if (cleanSub.includes('flat') || cleanSub.includes('villa') || cleanSub.includes('house') || cleanSub.includes('apartment')) {
@@ -313,7 +331,7 @@ export function getCategoryFields(typeKey, subcategory = '') {
         { key: 'bathrooms', label: 'Bathrooms', type: 'select', options: ['1', '2', '3', '4+'] },
         { key: 'balconies', label: 'Balconies', type: 'select', options: ['1', '2', '3+'] },
         { key: 'furnishing', label: 'Furnishing Status', type: 'select', options: ['Unfurnished', 'Semi-furnished', 'Fully furnished'] },
-        { key: 'possession', label: 'Possession Status', type: 'select', options: ['Ready to Move In', 'Resale', 'Under Construction'] },
+        { key: 'possessionStatus', label: 'Possession Status', type: 'select', options: STRUCTURAL_POSSESSION_OPTIONS },
         { key: 'propertyAge', label: 'Property Age', type: 'text', placeholder: 'e.g. Brand New / 2 Years' },
         { key: 'parking', label: 'Parking Space', type: 'select', options: ['None', 'Two Wheeler', 'One Car', 'Multiple Cars', 'Other'] },
         { key: 'gatedCommunity', label: 'Gated Community?', type: 'select', options: ['Yes', 'No'] },
@@ -386,6 +404,7 @@ export function getCategoryFields(typeKey, subcategory = '') {
       { key: 'furnishing', label: 'Furnishing', type: 'select', options: ['Furnished', 'Semi-Furnished', 'Unfurnished'] },
       { key: 'floor', label: 'Floor', type: 'text', placeholder: 'e.g. 2nd Floor' },
       { key: 'parking', label: 'Parking', type: 'text', placeholder: 'e.g. 1 Covered + 1 Open' },
+      { key: 'possessionStatus', label: 'Possession Status', type: 'select', options: POSSESSION_STATUS_OPTIONS },
     ];
   }
 

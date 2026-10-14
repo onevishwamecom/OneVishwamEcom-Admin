@@ -76,7 +76,7 @@ async function getContributorDetail(id) {
 
 async function getListings() {
   return dedupe('listings', async () => {
-    const data = unwrap(await client.get('/admin/listings'));
+    const data = unwrap(await client.get('/admin/listings?limit=500'));
     return flattenResults(data).map(normalizeListing);
   });
 }
@@ -115,7 +115,7 @@ async function getActivity() {
       .map((item) => ({
         _id: item._id,
         _type: item._type,
-        title: item.title || item.name || 'Untitled',
+        title: item.title || 'Untitled',
         status: item.status,
         contributorName: item.lister?.name || 'Unknown',
         createdAt: item.createdAt,

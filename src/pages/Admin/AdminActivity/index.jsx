@@ -8,11 +8,11 @@ import { CACHE_TTL } from '../../../services/cache/cacheService';
 import { ActivitySkeleton, ErrorState } from '../../../components/skeleton';
 
 const COLUMNS = [
-  { key: 'action',      label: 'Action' },
+  { key: 'action',      label: 'Action', className: 'w-px whitespace-nowrap' },
   { key: 'listing',     label: 'Listing' },
   { key: 'contributor', label: 'Contributor' },
   { key: 'note',        label: 'Note' },
-  { key: 'time',        label: 'Time' },
+  { key: 'time',        label: 'Time', className: 'w-px whitespace-nowrap' },
 ];
 
 const ACTION_LABEL = {

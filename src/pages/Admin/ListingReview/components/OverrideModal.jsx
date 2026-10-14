@@ -353,6 +353,39 @@ export default function OverrideModal({
                   <label htmlFor={`override-${f.key}`} className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
                     {f.label}
                   </label>
+                  {f.key === "possessionStatus" && (
+                    <div className="flex gap-2 mb-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const val = f.options?.includes("Ready for Registration")
+                            ? "Ready for Registration"
+                            : "Ready to Occupy";
+                          setOverrideForm((prev) => ({ ...prev, [f.key]: val }));
+                        }}
+                        className={`flex-1 py-1.5 px-2 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
+                          (overrideForm[f.key] === "Ready for Registration" || overrideForm[f.key] === "Ready to Occupy")
+                            ? "border-emerald-500 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-500/20"
+                            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                        }`}
+                      >
+                        <i className="fa-solid fa-circle-check text-emerald-500 mr-1.5" />
+                        {f.options?.includes("Ready for Registration") ? "Ready for Reg." : "Ready to Occupy"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setOverrideForm((prev) => ({ ...prev, [f.key]: "Under Construction" }))}
+                        className={`flex-1 py-1.5 px-2 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
+                          overrideForm[f.key] === "Under Construction"
+                            ? "border-amber-500 bg-amber-50 text-amber-800 ring-2 ring-amber-500/20"
+                            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                        }`}
+                      >
+                        <i className="fa-solid fa-person-digging text-amber-500 mr-1.5" />
+                        Under Construction
+                      </button>
+                    </div>
+                  )}
                   {f.type === 'select' ? (
                     <select
                       id={`override-${f.key}`}
@@ -366,6 +399,13 @@ export default function OverrideModal({
                           {opt}
                         </option>
                       ))}
+                      {(() => {
+                        const curVal = overrideForm[f.key] ?? listing?.details?.[f.key] ?? listing?.[f.key] ?? "";
+                        if (curVal && !f.options?.includes(curVal)) {
+                          return <option value={curVal}>{curVal}</option>;
+                        }
+                        return null;
+                      })()}
                     </select>
                   ) : (
                     <input

@@ -38,6 +38,8 @@ function AdminListings() {
     TABS,
     activeTab,
     setActiveTab,
+    page,
+    setPage,
     allListings,
     filtered,
     contributorNameById,
@@ -111,6 +113,8 @@ function AdminListings() {
           isUnseen={isUnseen}
           onOpenListing={openListing}
           onRefresh={retry}
+          page={page}
+          onPageChange={setPage}
         />
       )}
     </PageContainer>
