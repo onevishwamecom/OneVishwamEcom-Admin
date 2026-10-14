@@ -12,11 +12,11 @@ import { ContributorsSkeleton, ErrorState } from '../../../components/skeleton';
 const COLUMNS = [
   { key: 'name',      label: 'Contributor' },
   { key: 'contact',   label: 'Contact' },
-  { key: 'total',     label: 'Total',     align: 'center' },
-  { key: 'pending',   label: 'Pending',   align: 'center' },
-  { key: 'approved',  label: 'Approved',  align: 'center' },
-  { key: 'changes',   label: 'Changes',   align: 'center' },
-  { key: 'cancelled', label: 'Cancelled', align: 'center' },
+  { key: 'total',     label: 'Total',     align: 'center', className: 'w-px whitespace-nowrap' },
+  { key: 'pending',   label: 'Pending',   align: 'center', className: 'w-px whitespace-nowrap' },
+  { key: 'approved',  label: 'Approved',  align: 'center', className: 'w-px whitespace-nowrap' },
+  { key: 'changes',   label: 'Changes',   align: 'center', className: 'w-px whitespace-nowrap' },
+  { key: 'cancelled', label: 'Cancelled', align: 'center', className: 'w-px whitespace-nowrap' },
 ];
 
 const MODAL_COLUMNS = [

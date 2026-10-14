@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { StatusBadge } from '../../../components/Admin/AdminUi';
 import { PageContainer } from '../../../components/layout/PageContainer';
 import useListingReadStatus from '../../../hooks/useListingReadStatus';
@@ -16,6 +16,18 @@ import { DetailPageSkeleton, ErrorState } from '../../../components/skeleton';
 
 function ListingReview() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromPage = location.state?.fromPage || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('admin_listings_page') : null);
+  const fromPath = location.state?.fromPath;
+  const backTo = fromPath || (fromPage && Number(fromPage) > 1 ? `/admin/listings?page=${fromPage}` : '/admin/listings');
+
+  const handleBack = () => {
+    if (window.history.state?.idx > 0) {
+      navigate(-1);
+    } else {
+      navigate(backTo);
+    }
+  };
   const {
     type,
     listing,
@@ -47,7 +59,7 @@ function ListingReview() {
   const handleConfirmDelete = async () => {
     const success = await confirmDelete();
     if (success) {
-      navigate('/admin/listings', { replace: true });
+      navigate(backTo, { replace: true });
     }
   };
 
@@ -90,13 +102,14 @@ function ListingReview() {
     <PageContainer>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Link
-            to="/admin/listings"
-            className="h-10 w-10 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors"
+          <button
+            type="button"
+            onClick={handleBack}
+            className="h-10 w-10 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors cursor-pointer"
             aria-label="Back to listings"
           >
             <i className="fa-solid fa-arrow-left text-sm" />
-          </Link>
+          </button>
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight break-words">{listing.title}</h1>
             <p className="text-slate-500 font-medium mt-0.5 flex items-center gap-2">
