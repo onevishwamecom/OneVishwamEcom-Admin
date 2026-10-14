@@ -188,6 +188,12 @@ export default function useListingReview() {
 
   const confirmOverride = async () => {
     const payload = { ...overrideForm, images: overrideImages };
+    if (payload.possessionStatus !== undefined) {
+      payload.possession = payload.possessionStatus;
+      if (payload.details && typeof payload.details === "object") {
+        payload.details.possessionStatus = payload.possessionStatus;
+      }
+    }
     try {
       const updated = await adminApi.updateListing(type, id, payload);
       if (updated) {
@@ -245,7 +251,7 @@ export default function useListingReview() {
     if (!listing) return false;
     const result = await Swal.fire({
       title: 'Delete this listing permanently?',
-      text: `"${listing.title || listing.name || 'Untitled'}" will be permanently removed from MongoDB.`,
+      text: `"${listing.title || 'Untitled'}" will be permanently removed from MongoDB.`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#dc2626',

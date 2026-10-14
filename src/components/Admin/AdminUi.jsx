@@ -63,7 +63,7 @@ export function AvailabilityBadge({ status, className = '' }) {
   const cfg = availabilityStatusConfig(status);
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border capitalize whitespace-nowrap shadow-sm ${cfg.cls} ${className}`}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold border capitalize whitespace-nowrap shadow-xs ${cfg.cls} ${className}`}
     >
       <i className={`fa-solid ${cfg.icon} text-[9px]`} aria-hidden="true" />
       {cfg.label}
@@ -83,7 +83,7 @@ export function StatusBadge({ status, className = '' }) {
   const cfg = statusConfig(status);
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border capitalize whitespace-nowrap shadow-sm ${cfg.cls} ${className}`}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold border capitalize whitespace-nowrap shadow-xs ${cfg.cls} ${className}`}
     >
       <i className={`fa-solid ${cfg.icon} text-[9px]`} aria-hidden="true" />
       {cfg.label}
@@ -259,13 +259,13 @@ export function DataTable({
   const pagedRows = rows.slice(startIndex, endIndex);
 
   return (
-    <div className={`bg-white rounded-2xl border border-slate-100 shadow-card overflow-hidden ${className}`}>
-      <div className="overflow-x-auto touch-pan-y">
+    <div className={`bg-white rounded-2xl border border-slate-100 shadow-card overflow-hidden max-w-full ${className}`}>
+      <div className="overflow-x-auto touch-pan-y w-full max-w-full">
         <table className="min-w-full text-left text-sm border-collapse">
           <thead>
             <tr className="text-xs uppercase tracking-wider text-slate-400 border-b-2 border-slate-100">
               <th
-                className="px-3 py-2.5 font-medium whitespace-nowrap w-10 bg-slate-50 text-center"
+                className="px-2 py-2 font-semibold text-[11px] whitespace-nowrap w-8 bg-slate-50 text-center text-slate-400"
                 aria-label="Row number"
               >
                 #
@@ -274,7 +274,7 @@ export function DataTable({
                 <th
                   key={col.key}
                   className={[
-                    'px-4 py-2.5 font-medium whitespace-nowrap bg-slate-50',
+                    'px-2.5 sm:px-3 py-2 font-semibold text-[11px] uppercase tracking-wider text-slate-400 whitespace-nowrap bg-slate-50',
                     col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : '',
                     col.className || '',
                   ].join(' ')}
@@ -301,24 +301,29 @@ export function DataTable({
                   <tr
                     key={row._id || row.id || ri}
                     className={[
-                      'border-b border-slate-100 last:border-0 transition-colors cursor-default group',
+                      'border-b border-slate-100 last:border-0 transition-colors cursor-default group h-11 max-h-11',
                       rowBg,
                     ].join(' ')}
                   >
-                    <td className="px-3 py-2.5 text-center text-xs font-bold text-slate-300 select-none tabular-nums bg-slate-50">
+                    <td className="px-2 py-2 text-center text-[11px] font-bold text-slate-300 select-none tabular-nums bg-slate-50">
                       {startIndex + ri + 1}
                     </td>
-                    {cells.map((cell, ci) => (
-                      <td
-                        key={ci}
-                        className={[
-                          'px-4 py-2.5',
-                          cell?.props?.className || '',
-                        ].join(' ')}
-                      >
-                        {cell?.props?.children ?? cell}
-                      </td>
-                    ))}
+                    {cells.map((cell, ci) => {
+                      const cellProps = cell?.props || {};
+                      const { className: cellClass = '', children: cellChildren, ...restCellProps } = cellProps;
+                      return (
+                        <td
+                          key={cell?.key ?? ci}
+                          {...restCellProps}
+                          className={[
+                            'px-2 sm:px-2.5 py-1.5 text-xs align-middle whitespace-nowrap overflow-hidden',
+                            cellClass,
+                          ].join(' ')}
+                        >
+                          {cellChildren !== undefined ? cellChildren : cell}
+                        </td>
+                      );
+                    })}
                   </tr>
                 );
               })

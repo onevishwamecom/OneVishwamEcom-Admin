@@ -2,26 +2,8 @@ import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { useAdminAuth } from '../../store/adminSlice';
-import logo from '../../assets/logo.png';
+import logo from '../../assets/Logo.png';
 import logo2 from '../../assets/Logo2.png';
-
-/**
- * PART I — OneVishwam Core Admin Layout.
- * ┌────────────────────────────────────────────────────────────┐
- * │ OneVishwam Core Admin                       Admin   Logout │
- * ├────────────────┬───────────────────────────────────────────┤
- * │ Dashboard      │                                            │
- * │ Listings       │          Main Content                      │
- * │ Contributors   │                                             │
- * │ Categories     │                                             │
- * │ Activity       │                                             │
- * └────────────────┴────────────────────────────────────────────┘
- *
- * Responsive:
- *  - Desktop (lg+):  persistent full sidebar
- *  - Tablet (md):    compact icon-only sidebar
- *  - Mobile (<md):   drawer triggered by the menu button
- */
 
 const NAV_ITEMS = [
   { label: 'Dashboard', icon: 'fa-gauge-high', to: '/admin', end: true },
@@ -33,24 +15,64 @@ const NAV_ITEMS = [
   { label: 'Activity', icon: 'fa-clock-rotate-left', to: '/admin/activity' },
 ];
 
-function AdminSidebarContent({ compact }) {
+function AdminSidebarContent({ compact, onToggleCollapse }) {
   const location = useLocation();
 
   return (
     <div className="flex h-full flex-col">
-      {/* Brand */}
-      <div className={`flex items-center ${compact ? 'justify-center px-2' : 'justify-center px-4'} py-5 border-b border-white/[0.06]`}>
-        <NavLink to="/admin" className="flex items-center gap-2.5 group" aria-label="Admin home">
-          <img
-            src={compact ? logo2 : logo}
-            alt="OneVishwam"
-            className="h-10 w-auto object-contain"
-          />
-        </NavLink>
+      {/* ── Brand Header (with the single collapse/expand toggle) ── */}
+      <div
+        className={`border-b border-white/[0.06] ${
+          compact ? 'py-4 px-2 flex flex-col items-center' : 'py-4 px-4 flex items-center justify-between'
+        }`}
+      >
+        {!compact ? (
+          <>
+            <NavLink to="/admin" className="flex items-center gap-2 group" aria-label="Admin home">
+              <img
+                src={logo}
+                alt="OneVishwam"
+                className="h-9 w-auto object-contain transition-all duration-200"
+              />
+            </NavLink>
+            {onToggleCollapse && (
+              <button
+                type="button"
+                onClick={onToggleCollapse}
+                className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.08] transition-colors shrink-0"
+                title="Retract sidebar"
+                aria-label="Retract sidebar"
+              >
+                <i className="fa-solid fa-chevron-left text-xs" aria-hidden="true" />
+              </button>
+            )}
+          </>
+        ) : (
+          <>
+            <NavLink to="/admin" className="flex items-center justify-center group mb-2" aria-label="Admin home">
+              <img
+                src={logo2}
+                alt="OneVishwam"
+                className="h-8 w-8 object-contain"
+              />
+            </NavLink>
+            {onToggleCollapse && (
+              <button
+                type="button"
+                onClick={onToggleCollapse}
+                className="w-10 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.08] transition-colors"
+                title="Expand sidebar"
+                aria-label="Expand sidebar"
+              >
+                <i className="fa-solid fa-chevron-right text-xs" aria-hidden="true" />
+              </button>
+            )}
+          </>
+        )}
       </div>
 
-      {/* Navigation */}
-      <nav className={`flex-1 py-4 space-y-1 ${compact ? 'px-1.5' : 'px-3'}`}>
+      {/* ── Modular Navigation Icons ── */}
+      <nav className={`flex-1 py-4 space-y-1.5 ${compact ? 'px-2' : 'px-3'}`}>
         {NAV_ITEMS.map((item) => {
           const isActive = item.end
             ? location.pathname === '/admin'
@@ -60,34 +82,40 @@ function AdminSidebarContent({ compact }) {
               key={item.to}
               to={item.to}
               end={item.end}
-              className={`flex items-center gap-3 rounded-xl transition-all duration-200 ${
-                compact ? 'justify-center px-2 py-3' : 'px-4 py-3'
+              className={`flex items-center rounded-xl transition-all duration-200 ${
+                compact
+                  ? 'w-11 h-11 mx-auto justify-center'
+                  : 'gap-3 px-3.5 py-2.5'
               } ${
                 isActive
-                  ? 'bg-brand-blue/20 text-white font-semibold sidebar-active-glow'
-                  : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200'
+                  ? 'bg-brand-blue/20 text-white font-semibold sidebar-active-glow ring-1 ring-brand-blue/30'
+                  : 'text-slate-400 hover:bg-white/[0.06] hover:text-slate-200'
               }`}
               title={compact ? item.label : undefined}
               aria-current={isActive ? 'page' : undefined}
             >
               <i
-                className={`fa-solid ${item.icon} text-base ${isActive ? 'text-brand-blue' : 'text-slate-400'}`}
+                className={`fa-solid ${item.icon} text-base shrink-0 ${isActive ? 'text-brand-blue' : 'text-slate-400'}`}
                 aria-hidden="true"
               />
-              {!compact && <span className="text-sm font-medium">{item.label}</span>}
+              {!compact && <span className="text-sm font-medium truncate">{item.label}</span>}
               {isActive && !compact && (
-                <div className="ml-auto h-1.5 w-1.5 rounded-full bg-blue-400 shadow-[0_0_6px_rgba(37,99,235,0.6)]" />
+                <div className="ml-auto h-1.5 w-1.5 rounded-full bg-blue-400 shadow-[0_0_6px_rgba(37,99,235,0.6)] shrink-0" />
               )}
             </NavLink>
           );
         })}
       </nav>
 
-      {/* Footer note */}
-      <div className={`border-t border-white/[0.06] p-3 ${compact ? 'px-1' : ''}`}>
-        <p className={`text-[10px] uppercase tracking-wider text-slate-500 ${compact ? 'text-center' : 'px-2'}`}>
-          {compact ? 'v1' : 'OneVishwam Core Admin · Prototype'}
-        </p>
+      {/* ── Minimal Clean Footer ── */}
+      <div className={`border-t border-white/[0.06] py-3 ${compact ? 'px-2 text-center' : 'px-4'}`}>
+        {compact ? (
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">v1</span>
+        ) : (
+          <p className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">
+            OneVishwam Core Admin
+          </p>
+        )}
       </div>
     </div>
   );
@@ -98,6 +126,23 @@ function AdminLayout() {
   const navigate = useNavigate();
   const { logout } = useAdminAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('admin_sidebar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleSidebar = () => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('admin_sidebar_collapsed', String(next));
+      } catch (_) {}
+      return next;
+    });
+  };
 
   useEffect(() => {
     setMobileOpen(false);
@@ -170,22 +215,28 @@ function AdminLayout() {
 
       {/* Tablet compact sidebar */}
       <aside
-        className="hidden lg:hidden md:flex fixed top-0 left-0 z-40 h-screen w-20 bg-sidebar-gradient"
+        className="hidden lg:hidden md:flex fixed top-0 left-0 z-40 h-screen w-[68px] bg-sidebar-gradient"
         aria-label="Admin navigation"
       >
         <AdminSidebarContent compact />
       </aside>
 
-      {/* Desktop full sidebar */}
+      {/* Desktop retractable sidebar */}
       <aside
-        className="hidden lg:flex fixed top-0 left-0 z-40 h-screen w-64 bg-sidebar-gradient"
+        className={`hidden lg:flex fixed top-0 left-0 z-40 h-screen ${
+          isCollapsed ? 'w-[68px]' : 'w-64'
+        } bg-sidebar-gradient transition-all duration-300 ease-in-out`}
         aria-label="Admin navigation"
       >
-        <AdminSidebarContent compact={false} />
+        <AdminSidebarContent compact={isCollapsed} onToggleCollapse={toggleSidebar} />
       </aside>
 
       {/* Main column */}
-      <div className="flex flex-1 flex-col lg:ml-64 md:ml-20 ml-0 transition-all duration-300">
+      <div
+        className={`flex flex-1 flex-col min-w-0 ${
+          isCollapsed ? 'lg:ml-[68px]' : 'lg:ml-64'
+        } md:ml-[68px] ml-0 transition-all duration-300 ease-in-out overflow-x-hidden`}
+      >
         {/* Top bar */}
         <header className="sticky top-0 z-30 glass border-b border-slate-200/60">
           <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8 ml-12 lg:ml-0">
@@ -214,7 +265,7 @@ function AdminLayout() {
         {/* Content */}
         <main
           id="admin-main-content"
-          className="flex-1 bg-mesh-gradient bg-slate-50/95"
+          className="flex-1 min-w-0 w-full bg-mesh-gradient bg-slate-50/95 overflow-x-hidden"
           role="main"
           tabIndex={-1}
         >

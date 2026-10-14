@@ -25,7 +25,7 @@
  */
 export function PageContainer({ children, className = '' }) {
   return (
-    <div className={`page-container page-enter ${className}`.trim()}>
+    <div className={`page-container page-enter min-w-0 max-w-full ${className}`.trim()}>
       {children}
     </div>
   );

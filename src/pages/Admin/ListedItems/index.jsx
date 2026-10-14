@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useMemo, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { Link, useParams, useSearchParams, useLocation } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { formatINR, formatDate } from '../../../utils';
 import { EmptyState } from '../../../components/Admin/AdminUi';
@@ -32,8 +33,67 @@ function ListedItemsSkeleton() {
 
 export default function ListedItems() {
   const { category } = useParams();
-  const [page, setPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+
+  const page = useMemo(() => {
+    const fromParams = parseInt(searchParams.get('page'), 10);
+    if (!isNaN(fromParams) && fromParams > 0) return fromParams;
+    try {
+      const fromStorage = parseInt(sessionStorage.getItem('admin_listings_page'), 10);
+      if (!isNaN(fromStorage) && fromStorage > 0) return fromStorage;
+    } catch (e) {}
+    return 1;
+  }, [searchParams]);
+
+  const setPage = (newPageOrFn) => {
+    const current = parseInt(searchParams.get('page'), 10) || 1;
+    const next = typeof newPageOrFn === 'function' ? newPageOrFn(current) : newPageOrFn;
+    try {
+      sessionStorage.setItem('admin_listings_page', String(next));
+    } catch (e) {}
+    setSearchParams((prevParams) => {
+      const updated = new URLSearchParams(prevParams);
+      if (next > 1) {
+        updated.set('page', String(next));
+      } else {
+        updated.delete('page');
+      }
+      return updated;
+    });
+  };
   const [editing, setEditing] = useState(null);
+  const [hoverPill, setHoverPill] = useState(null);
+
+  const handleHoverItem = (text, targetElement) => {
+    if (!text || text === '—' || !targetElement) {
+      setHoverPill(null);
+      return;
+    }
+    const isTruncated = targetElement.scrollWidth > (targetElement.clientWidth + 1);
+    if (!isTruncated) {
+      setHoverPill(null);
+      return;
+    }
+    const rect = targetElement.getBoundingClientRect();
+    setHoverPill({
+      text,
+      x: rect.left + rect.width / 2,
+      y: rect.top,
+      bottom: rect.bottom,
+    });
+  };
+
+  useEffect(() => {
+    if (!hoverPill) return;
+    const hidePill = () => setHoverPill(null);
+    window.addEventListener('scroll', hidePill, true);
+    window.addEventListener('resize', hidePill);
+    return () => {
+      window.removeEventListener('scroll', hidePill, true);
+      window.removeEventListener('resize', hidePill);
+    };
+  }, [hoverPill]);
   const { data: listings, loading, error, retry } = useAsyncData(
     () => adminApi.getListings(),
     [],
@@ -180,19 +240,19 @@ export default function ListedItems() {
         />
       ) : (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm border-collapse">
+          <div className="overflow-x-auto touch-pan-y w-full max-w-full">
+            <table className="w-full text-left text-xs sm:text-sm border-collapse">
               <thead>
                 <tr className="text-xs uppercase tracking-wider text-slate-400 border-b-2 border-slate-100">
-                  <th className="px-4 py-3.5 font-medium whitespace-nowrap w-12 bg-slate-50 text-center">
+                  <th className="px-2 py-2 font-semibold text-[11px] whitespace-nowrap w-8 bg-slate-50 text-center text-slate-400">
                     #
                   </th>
-                  <th className="px-5 py-3.5 font-medium whitespace-nowrap bg-slate-50">Product</th>
-                  <th className="px-5 py-3.5 font-medium whitespace-nowrap bg-slate-50">Category</th>
-                  <th className="px-5 py-3.5 font-medium whitespace-nowrap bg-slate-50">Price</th>
-                  <th className="px-5 py-3.5 font-medium whitespace-nowrap bg-slate-50">Location</th>
-                  <th className="px-5 py-3.5 font-medium whitespace-nowrap bg-slate-50">Date</th>
-                  <th className="px-5 py-3.5 font-medium whitespace-nowrap bg-slate-50 text-right">Action</th>
+                  <th className="px-2.5 sm:px-3 py-2 font-semibold text-[11px] uppercase tracking-wider text-slate-400 whitespace-nowrap bg-slate-50">Product</th>
+                  <th className="px-2.5 sm:px-3 py-2 font-semibold text-[11px] uppercase tracking-wider text-slate-400 whitespace-nowrap bg-slate-50 w-px">Category</th>
+                  <th className="px-2.5 sm:px-3 py-2 font-semibold text-[11px] uppercase tracking-wider text-slate-400 whitespace-nowrap bg-slate-50">Price</th>
+                  <th className="px-2.5 sm:px-3 py-2 font-semibold text-[11px] uppercase tracking-wider text-slate-400 whitespace-nowrap bg-slate-50">Location</th>
+                  <th className="px-2.5 sm:px-3 py-2 font-semibold text-[11px] uppercase tracking-wider text-slate-400 whitespace-nowrap bg-slate-50">Date</th>
+                  <th className="px-2.5 sm:px-3 py-2 font-semibold text-[11px] uppercase tracking-wider text-slate-400 whitespace-nowrap bg-slate-50 text-right w-px">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -202,21 +262,31 @@ export default function ListedItems() {
                   return (
                     <tr
                       key={l._id || l.id}
-                      className={`border-b border-slate-100 last:border-0 transition-colors ${
+                      className={`border-b border-slate-100 last:border-0 transition-colors h-12 max-h-12 ${
                         isEvenRow ? 'bg-slate-50/60' : 'bg-white'
                       }`}
                     >
-                      <td className="px-4 py-3.5 text-center text-xs font-bold text-slate-300 select-none tabular-nums bg-slate-50">
+                      <td className="px-2 py-2 text-center text-[11px] font-bold text-slate-300 select-none tabular-nums bg-slate-50 align-middle">
                         {(effectivePage - 1) * rowsPerPage + ri + 1}
                       </td>
 
                       {/* Product */}
-                      <td className="px-5 py-3.5">
+                      <td className="px-2.5 sm:px-3 py-1.5 max-w-[190px] overflow-hidden align-middle">
                         <Link
                           to={`/admin/listings/${l._type}/${l._id || l.id}`}
-                          className="group flex items-center gap-3"
+                          state={{
+                            fromPage: effectivePage,
+                            fromPath: `${location.pathname}${location.search}`,
+                          }}
+                          onClick={() => {
+                            try {
+                              sessionStorage.setItem('admin_listings_page', String(effectivePage));
+                            } catch (e) {}
+                          }}
+                          className="group flex items-center gap-2 min-w-0"
+                          title={l.title}
                         >
-                          <div className="h-11 w-11 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
+                          <div className="h-8 w-8 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
                             {l.images && l.images.length > 0 && l.images[0] ? (
                               <img
                                 src={l.images[0]}
@@ -228,15 +298,19 @@ export default function ListedItems() {
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-slate-300">
-                                <i className={`fa-solid ${cat?.icon || 'fa-box-open'} text-sm`} aria-hidden="true" />
+                                <i className={`fa-solid ${cat?.icon || 'fa-box-open'} text-xs`} aria-hidden="true" />
                               </div>
                             )}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-medium text-slate-800 group-hover:text-brand-blue transition-colors truncate">
+                            <p
+                              onMouseEnter={(e) => handleHoverItem(l.title, e.currentTarget)}
+                              onMouseLeave={() => handleHoverItem(null)}
+                              className="font-semibold text-xs text-slate-800 group-hover:text-brand-blue transition-colors truncate max-w-[140px] sm:max-w-[170px] cursor-pointer"
+                            >
                               {l.title}
                             </p>
-                            <p className="text-[10px] text-slate-400 font-normal">
+                            <p className="text-[10px] text-slate-400 font-normal truncate max-w-[140px]">
                               {l._id || l.id}
                             </p>
                           </div>
@@ -244,39 +318,44 @@ export default function ListedItems() {
                       </td>
 
                       {/* Category */}
-                      <td className="px-5 py-3.5">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600">
-                          <i className={`fa-solid ${cat?.icon || 'fa-box-open'} text-brand-blue`} aria-hidden="true" />
+                      <td className="px-2.5 sm:px-3 py-1.5 w-px whitespace-nowrap align-middle">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600">
+                          <i className={`fa-solid ${cat?.icon || 'fa-box-open'} text-brand-blue text-[9px]`} aria-hidden="true" />
                           {cat?.label || l._type}
                         </span>
                       </td>
 
                       {/* Price */}
-                      <td className="px-5 py-3.5 font-bold text-slate-700 whitespace-nowrap">
+                      <td className="px-2.5 sm:px-3 py-1.5 font-bold text-slate-800 whitespace-nowrap text-xs align-middle">
                         {formatINR(l.price, { compact: true }) || '—'}
                       </td>
 
                       {/* Location */}
-                      <td className="px-5 py-3.5 text-slate-600 whitespace-nowrap">
-                        {l.location || l.area || l.city || '—'}
+                      <td className="px-2.5 sm:px-3 py-1.5 text-slate-600 max-w-[110px] truncate text-xs align-middle">
+                        <span
+                          onMouseEnter={(e) => handleHoverItem(l.location || l.area || l.city, e.currentTarget)}
+                          onMouseLeave={() => handleHoverItem(null)}
+                          className="truncate block max-w-[110px] cursor-pointer hover:text-slate-900 transition-colors"
+                        >
+                          {l.location || l.area || l.city || '—'}
+                        </span>
                       </td>
 
                       {/* Date */}
-                      <td className="px-5 py-3.5 text-slate-400 text-xs whitespace-nowrap">
+                      <td className="px-2.5 sm:px-3 py-1.5 text-slate-400 text-xs whitespace-nowrap align-middle">
                         {formatDate(l.createdAt)}
                       </td>
 
                       {/* Action */}
-                      <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                        <div className="inline-flex items-center gap-2">
-                          <button
-                            onClick={() => handleDelete(l)}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-600 px-3 py-1.5 text-sm font-bold hover:bg-rose-100 transition-colors"
-                            aria-label={`Delete ${l.title}`}
-                          >
-                            <i className="fa-solid fa-trash-can text-[10px]" aria-hidden="true" />
-                          </button>
-                        </div>
+                      <td className="px-2.5 sm:px-3 py-1.5 text-right w-px whitespace-nowrap align-middle">
+                        <button
+                          onClick={() => handleDelete(l)}
+                          className="inline-flex items-center justify-center h-7 w-7 rounded-lg border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
+                          aria-label={`Delete ${l.title}`}
+                          title="Delete listing"
+                        >
+                          <i className="fa-solid fa-trash-can text-[10px]" aria-hidden="true" />
+                        </button>
                       </td>
                     </tr>
                   );
@@ -332,6 +411,26 @@ export default function ListedItems() {
         category={editingCategory}
         onConfirm={handleEditConfirm}
       />
+
+      {/* Small floating hover pill anchored directly on top of the corresponding column */}
+      {hoverPill && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed z-[9999] pointer-events-none px-2.5 py-1 bg-slate-900/95 text-white text-xs font-medium rounded-lg shadow-xl border border-slate-700/80 backdrop-blur-md max-w-xs whitespace-normal break-words leading-tight animate-fade-in"
+          style={{
+            left: Math.max(80, Math.min(window.innerWidth - 80, hoverPill.x)),
+            top: hoverPill.y > 60 ? hoverPill.y - 6 : hoverPill.bottom + 6,
+            transform: hoverPill.y > 60 ? 'translate(-50%, -100%)' : 'translate(-50%, 0)',
+          }}
+        >
+          <span>{hoverPill.text}</span>
+          {hoverPill.y > 60 ? (
+            <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-slate-900/95" />
+          ) : (
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-full w-0 h-0 border-x-4 border-x-transparent border-b-4 border-b-slate-900/95" />
+          )}
+        </div>,
+        document.body
+      )}
     </PageContainer>
   );
 }
