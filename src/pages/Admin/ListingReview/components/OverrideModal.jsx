@@ -94,8 +94,6 @@ export default function OverrideModal({
         setOverrideForm((prev) => ({
           ...prev,
           videoUrl,
-          video: videoUrl,
-          videos: [videoUrl],
         }));
       }
     } catch (err) {
@@ -550,8 +548,8 @@ export default function OverrideModal({
             <div className="flex gap-2">
               <input
                 type="text"
-                value={overrideForm.videoUrl || overrideForm.video || ''}
-                onChange={(e) => setOverrideForm((prev) => ({ ...prev, videoUrl: e.target.value, video: e.target.value, videos: [e.target.value] }))}
+                value={overrideForm.videoUrl || ''}
+                onChange={(e) => setOverrideForm((prev) => ({ ...prev, videoUrl: e.target.value }))}
                 className={OVERRIDE_INPUT_CLASS}
                 placeholder="Paste Video URL (MP4, YouTube, Vimeo) or upload below"
               />
@@ -576,10 +574,10 @@ export default function OverrideModal({
               </button>
             </div>
 
-            {(overrideForm.videoUrl || overrideForm.video) && (
+            {overrideForm.videoUrl && (
               <div className="relative rounded-2xl overflow-hidden bg-black/90 p-2 max-w-md">
                 <video
-                  src={overrideForm.videoUrl || overrideForm.video}
+                  src={overrideForm.videoUrl}
                   controls
                   className="w-full h-40 object-cover rounded-xl"
                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
@@ -587,9 +585,9 @@ export default function OverrideModal({
                 <button
                   type="button"
                   onClick={() => {
-                    const currentUrl = overrideForm.videoUrl || overrideForm.video;
+                    const currentUrl = overrideForm.videoUrl;
                     if (currentUrl?.includes('firebasestorage')) deleteMediaFromStorage(currentUrl);
-                    setOverrideForm((prev) => ({ ...prev, videoUrl: '', video: '', videos: [] }));
+                    setOverrideForm((prev) => ({ ...prev, videoUrl: '' }));
                   }}
                   className="absolute top-3 right-3 w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700 shadow-md text-xs"
                   title="Remove Video"

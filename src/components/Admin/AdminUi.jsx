@@ -301,26 +301,31 @@ export function DataTable({
                   <tr
                     key={row._id || row.id || ri}
                     className={[
-                      'border-b border-slate-100 last:border-0 transition-colors cursor-default group h-11 max-h-11',
+                      'border-b border-slate-100 last:border-0 transition-colors cursor-default group hover:bg-slate-50/50',
                       rowBg,
                     ].join(' ')}
                   >
-                    <td className="px-2 py-2 text-center text-[11px] font-bold text-slate-300 select-none tabular-nums bg-slate-50">
+                    <td className="px-2 py-3 text-center text-[11px] font-bold text-slate-300 select-none tabular-nums bg-slate-50">
                       {startIndex + ri + 1}
                     </td>
                     {cells.map((cell, ci) => {
-                      const cellProps = cell?.props || {};
-                      const { className: cellClass = '', children: cellChildren, ...restCellProps } = cellProps;
+                      if (React.isValidElement(cell) && cell.type === 'td') {
+                        const { className: cellClass = '', ...restProps } = cell.props || {};
+                        return React.cloneElement(cell, {
+                          key: cell.key ?? ci,
+                          ...restProps,
+                          className: [
+                            'px-2.5 sm:px-3 py-2.5 text-xs align-middle',
+                            cellClass,
+                          ].join(' '),
+                        });
+                      }
                       return (
                         <td
                           key={cell?.key ?? ci}
-                          {...restCellProps}
-                          className={[
-                            'px-2 sm:px-2.5 py-1.5 text-xs align-middle whitespace-nowrap overflow-hidden',
-                            cellClass,
-                          ].join(' ')}
+                          className="px-2.5 sm:px-3 py-2.5 text-xs align-middle text-slate-700"
                         >
-                          {cellChildren !== undefined ? cellChildren : cell}
+                          {cell}
                         </td>
                       );
                     })}

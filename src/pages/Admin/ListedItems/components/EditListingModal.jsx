@@ -81,12 +81,11 @@ export default function EditListingModal({ open, onClose, listing, category, onC
 
       if (downloadUrl) {
         if (mediaType === 'videos') {
-          setForm(prev => ({ ...prev, videoUrl: downloadUrl, video: downloadUrl, videos: [downloadUrl] }));
+          setForm(prev => ({ ...prev, videoUrl: downloadUrl }));
         } else if (mediaType === 'documents') {
           setForm(prev => ({
             ...prev,
             pdfUrl: downloadUrl,
-            brochure: downloadUrl,
             documents: [...(prev.documents || []), downloadUrl],
           }));
         } else {
@@ -115,8 +114,6 @@ export default function EditListingModal({ open, onClose, listing, category, onC
         setForm((prev) => ({
           ...prev,
           videoUrl: downloadUrl,
-          video: downloadUrl,
-          videos: [downloadUrl],
         }));
       }
     } catch (err) {
@@ -392,8 +389,8 @@ export default function EditListingModal({ open, onClose, listing, category, onC
             <div className="flex gap-2">
               <input
                 type="text"
-                value={form.videoUrl || form.video || ''}
-                onChange={(e) => setForm((prev) => ({ ...prev, videoUrl: e.target.value, video: e.target.value, videos: [e.target.value] }))}
+                value={form.videoUrl || ''}
+                onChange={(e) => setForm((prev) => ({ ...prev, videoUrl: e.target.value }))}
                 className={OVERRIDE_INPUT_CLASS}
                 placeholder="Paste Video URL (MP4, YouTube, Vimeo) or upload below"
               />
@@ -418,10 +415,10 @@ export default function EditListingModal({ open, onClose, listing, category, onC
               </button>
             </div>
 
-            {(form.videoUrl || form.video) && (
+            {form.videoUrl && (
               <div className="relative rounded-2xl overflow-hidden bg-black/90 p-2 max-w-md">
                 <video
-                  src={form.videoUrl || form.video}
+                  src={form.videoUrl}
                   controls
                   className="w-full h-40 object-cover rounded-xl"
                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
@@ -429,9 +426,9 @@ export default function EditListingModal({ open, onClose, listing, category, onC
                 <button
                   type="button"
                   onClick={() => {
-                    const currentUrl = form.videoUrl || form.video;
+                    const currentUrl = form.videoUrl;
                     if (currentUrl?.includes('firebasestorage')) deleteMediaFromStorage(currentUrl);
-                    setForm((prev) => ({ ...prev, videoUrl: '', video: '', videos: [] }));
+                    setForm((prev) => ({ ...prev, videoUrl: '' }));
                   }}
                   className="absolute top-3 right-3 w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700 shadow-md text-xs"
                   title="Remove Video"

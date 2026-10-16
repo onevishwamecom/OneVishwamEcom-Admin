@@ -50,26 +50,97 @@ async function getStats() {
 
 async function getContributors() {
   return dedupe('contributors', () =>
-    client.get('/admin/contributors').then(unwrap).then((data) => data?.contributors || []),
+    client.get('/admin/contributors').then(unwrap).then((data) => {
+      const list = data?.contributors || [];
+      const seen = new Set();
+      const unique = [];
+      for (const c of list) {
+        const key = (c.email || c.name || String(c._id || c.id || '')).trim().toLowerCase();
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        unique.push(c);
+      }
+      return unique;
+    }),
   );
 }
 
 async function getContributorDetail(id) {
+  if (!id) return null;
   return dedupe(`contributor:${id}`, async () => {
-    const data = unwrap(await client.get(`/admin/contributors/${encodeURIComponent(id)}`));
-    if (!data) return null;
+    let data = null;
+    try {
+      data = unwrap(await client.get(`/admin/contributors/${encodeURIComponent(id)}`));
+    } catch {}
+
     const items = [];
-    if (data.listings) {
+    if (data?.listings) {
       for (const [type, arr] of Object.entries(data.listings)) {
         if (Array.isArray(arr)) {
           arr.forEach((item) => items.push({ ...item, _type: type }));
         }
       }
     }
+
+    // Resilient fallback if endpoint returned 0 items or needs contributor info
+    let contributorObj = data?.contributor;
+    if (!contributorObj || !contributorObj.name) {
+      try {
+        const allContribs = await getContributors();
+        const found = allContribs.find(
+          (c) => String(c._id || c.id) === String(id) || (c.email && c.email.toLowerCase() === String(id).toLowerCase())
+        );
+        if (found) {
+          contributorObj = { ...found, ...(contributorObj || {}) };
+        }
+      } catch {}
+    }
+    contributorObj = contributorObj || {};
+
+    if (items.length === 0) {
+      try {
+        const allListings = await getListings();
+        const targetId = String(id || '');
+        const contributorEmail = (contributorObj?.email || (targetId.includes('@') ? targetId : '')).toLowerCase();
+
+        const matched = allListings.filter((l) => {
+          const listerId = String(l.lister?._id || l.listerId || l.createdBy || l.contributorId || '');
+          const listerEmail = (l.lister?.email || l.contributor?.email || l.contactEmail || '').toLowerCase();
+          const contributorId = String(l.contributor?._id || l.contributor?.id || '');
+
+          return (
+            (targetId && (listerId === targetId || contributorId === targetId)) ||
+            (contributorObj?._id && (listerId === String(contributorObj._id) || contributorId === String(contributorObj._id))) ||
+            (contributorEmail && (listerEmail === contributorEmail || (l.contactEmail && l.contactEmail.toLowerCase() === contributorEmail)))
+          );
+        });
+
+        if (matched.length > 0) {
+          items.push(...matched);
+        }
+      } catch {}
+    }
+
+    const phone = contributorObj.phone || contributorObj.contact || (items[0]?.contributor?.contact || items[0]?.contributor?.phone || items[0]?.contact || '');
+    const email = contributorObj.email || (items[0]?.contributor?.email || (id.includes('@') ? id : ''));
+    const name = contributorObj.name || (items[0]?.contributor?.name || items[0]?.lister?.name) || 'Contributor';
+
     return {
-      ...data.contributor,
-      totalListings: data.totalListings || items.length,
+      ...contributorObj,
+      _id: contributorObj._id || id,
+      id: contributorObj._id || id,
+      name,
+      phone,
+      contact: phone,
+      email,
+      totalListings: items.length || data?.totalListings || 0,
       items,
+      stats: {
+        totalListings: items.length,
+        approvedListings: items.filter((i) => i.status === 'approved').length,
+        pendingListings: items.filter((i) => i.status === 'pending').length,
+        cancelledListings: items.filter((i) => i.status === 'cancelled').length,
+      },
     };
   });
 }
