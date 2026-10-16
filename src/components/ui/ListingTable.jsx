@@ -121,7 +121,6 @@ function ListingTable({
       const isCancelled = item.status === 'cancelled' || item.status === 'rejected';
       const isChangesReq = item.status === 'changes-required';
       const reason = item.adminComment || item.adminFeedback || item.reason;
-      const displayId = item.itemId || item._id || item.id;
 
       return (
         <div className="flex items-center gap-3 min-w-[200px] max-w-[280px]">
@@ -149,11 +148,6 @@ function ListingTable({
             >
               {title}
             </Link>
-            {item.itemId && (
-              <p className="text-[10px] text-slate-400 font-mono">
-                ID: {String(displayId || '').slice(-6).toUpperCase()}
-              </p>
-            )}
             {isCancelled && reason && (
               <p className="text-[11px] font-medium text-rose-600 truncate mt-0.5 flex items-center gap-1">
                 <i className="fa-solid fa-circle-exclamation text-[10px]" />
