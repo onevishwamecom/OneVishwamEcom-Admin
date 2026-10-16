@@ -8,6 +8,11 @@ import useAsyncData from '../../../hooks/useAsyncData';
 import { adminApi } from '../../../api/adminData';
 import { CACHE_TTL } from '../../../services/cache/cacheService';
 import { ContributorsSkeleton, ErrorState } from '../../../components/skeleton';
+import {
+  ListingTable,
+  Button,
+  IconButton,
+} from '../../../components/ui';
 
 const COLUMNS = [
   { key: 'name',      label: 'Contributor' },
@@ -50,18 +55,25 @@ function ContributorModal({ contributor, onClose }) {
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-bold text-slate-900">Contributor Details</h2>
             {contributorId && (
-              <Link
+              <Button
+                variant="blue"
+                size="xs"
+                icon="fa-arrow-up-right-from-square"
+                iconPosition="right"
                 to={`/admin/contributors/${encodeURIComponent(contributorId)}`}
-                className="text-xs font-bold text-brand-blue hover:underline inline-flex items-center gap-1.5 bg-blue-50 px-2.5 py-1 rounded-lg"
               >
-                <span>Full Profile</span>
-                <i className="fa-solid fa-arrow-up-right-from-square text-[10px]" />
-              </Link>
+                Full Profile
+              </Button>
             )}
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center">
-            <i className="fa-solid fa-xmark text-lg"></i>
-          </button>
+          <IconButton
+            icon="fa-xmark"
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            title="Close"
+            aria-label="Close"
+          />
         </div>
 
         {/* Content */}
@@ -101,32 +113,12 @@ function ContributorModal({ contributor, onClose }) {
                 Loading contributions…
               </div>
             ) : (
-            <DataTable 
-              columns={MODAL_COLUMNS}
-              rows={contributorListings}
-              emptyIcon="fa-box-open"
-              emptyTitle="No contributions"
-              emptyMessage="This user hasn't submitted any listings yet."
-              renderRow={(l) => [
-                <td key="title" className="font-medium text-slate-800 w-1/2">
-                  <Link to={`/admin/listings/${l._type || 'properties'}/${l._id || l.id}`} className="hover:text-brand-blue transition-colors group">
-                    <span className="block truncate">{l.title || l.name}</span>
-                    <span className="text-[10px] text-slate-400 font-normal group-hover:text-brand-blue/70">ID: {l._id || l.id}</span>
-                  </Link>
-                </td>,
-                <td key="category" className="text-slate-600">
-                  <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500">
-                    {l._type || l.category || 'properties'}
-                  </span>
-                </td>,
-                <td key="price" className="font-bold text-slate-700 whitespace-nowrap">
-                  {formatINR(l.price, { compact: true }) || l.price || '—'}
-                </td>,
-                <td key="status" className="text-center w-px whitespace-nowrap">
-                  <StatusBadge status={l.status} />
-                </td>
-              ]}
-            />
+              <ListingTable
+                items={contributorListings}
+                columns={['product', 'category', 'price', 'status']}
+                portal="admin"
+                responsiveMode="scroll"
+              />
             )}
           </div>
         </div>
@@ -201,14 +193,6 @@ function AdminContributors() {
                       <span className="truncate group-hover:underline">{c.name}</span>
                       <i className="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-300 group-hover:text-brand-blue shrink-0" />
                     </Link>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedContributor(c)}
-                      className="text-[11px] font-semibold text-brand-blue hover:underline inline-flex items-center gap-1 mt-0.5 focus:outline-none"
-                    >
-                      <i className="fa-regular fa-window-restore text-[10px]" />
-                      <span>Quick View</span>
-                    </button>
                   </div>
                 </div>
                 <div className="space-y-2 text-sm">
@@ -266,14 +250,6 @@ function AdminContributors() {
                     <span className="group-hover:underline">{c.name}</span>
                     <i className="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-300 group-hover:text-brand-blue" />
                   </Link>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedContributor(c)}
-                    className="px-2 py-0.5 text-[10px] font-semibold text-slate-500 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors"
-                    title="Open details modal"
-                  >
-                    Quick View
-                  </button>
                 </div>
               </td>,
 

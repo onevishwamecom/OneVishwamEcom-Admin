@@ -276,6 +276,34 @@ async function getUsers(params = {}) {
   return dedupe(key, () => client.get(`/admin/users?${query}`).then(unwrap));
 }
 
+async function getBulkBatches(params = {}) {
+  return client.get('/bulk-listing/batches', { params }).then(unwrap);
+}
+
+async function getBulkBatchById(batchId) {
+  return client.get(`/bulk-listing/batches/${encodeURIComponent(batchId)}`).then(unwrap);
+}
+
+async function getTemplateDownloadLogs(params = {}) {
+  return client.get('/bulk-listing/download-logs', { params }).then(unwrap);
+}
+
+async function deleteBatch(batchId) {
+  return client.delete(`/bulk-listing/batches/${encodeURIComponent(batchId)}`).then(unwrap);
+}
+
+async function deleteBatchItem(batchId, itemId) {
+  return client.delete(`/bulk-listing/batches/${encodeURIComponent(batchId)}/items/${encodeURIComponent(itemId)}`).then(unwrap);
+}
+
+async function updateBatchItem(batchId, itemId, data) {
+  return client.put(`/bulk-listing/batches/${encodeURIComponent(batchId)}/items/${encodeURIComponent(itemId)}`, data).then(unwrap);
+}
+
+async function addItemToBatch(batchId, data) {
+  return client.post(`/bulk-listing/batches/${encodeURIComponent(batchId)}/items`, data).then(unwrap);
+}
+
 export const adminApi = {
   getStats,
   getContributors,
@@ -292,6 +320,13 @@ export const adminApi = {
   deleteListing,
   getCategories,
   getActivity,
+  getBulkBatches,
+  getBulkBatchById,
+  getTemplateDownloadLogs,
+  deleteBatch,
+  deleteBatchItem,
+  updateBatchItem,
+  addItemToBatch,
 };
 
 export default adminApi;

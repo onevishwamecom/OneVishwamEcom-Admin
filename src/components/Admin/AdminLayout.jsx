@@ -8,6 +8,7 @@ import logo2 from '../../assets/Logo2.png';
 const NAV_ITEMS = [
   { label: 'Dashboard', icon: 'fa-gauge-high', to: '/admin', end: true },
   { label: 'Listings', icon: 'fa-list', to: '/admin/listings' },
+  { label: 'Bulk Listings', icon: 'fa-file-excel', to: '/admin/bulk-listings' },
   { label: 'Approved Items', icon: 'fa-box-open', to: '/admin/approved-items' },
   { label: 'Contributors', icon: 'fa-users', to: '/admin/contributors' },
   { label: 'Website Users', icon: 'fa-user-check', to: '/admin/users' },
