@@ -16,7 +16,7 @@
  */
 
 const STORAGE_PREFIX = 'onevishwam_cache';
-const CACHE_VERSION = 6; // bumped to invalidate stale cached contributor data
+const CACHE_VERSION = 7; // bumped to invalidate cached contributor listing counts
 
 /** Configurable freshness lifetimes (ms) — tune per data type, never hardcode. */
 export const CACHE_TTL = {
