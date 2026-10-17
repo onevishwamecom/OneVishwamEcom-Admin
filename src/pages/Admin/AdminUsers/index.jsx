@@ -11,8 +11,23 @@ const USER_COLUMNS = [
   { key: 'contact', label: 'Contact Info' },
   { key: 'location', label: 'Location' },
   { key: 'lastLogin', label: 'Last Logged In', align: 'center' },
+  { key: 'duration', label: 'Time Spent on Site', align: 'center' },
   { key: 'status', label: 'Account Status', align: 'center' },
 ];
+
+function formatDuration(totalSeconds) {
+  if (!totalSeconds || totalSeconds < 1) return '< 1m';
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  if (minutes > 0) {
+    return `${minutes}m ${seconds}s`;
+  }
+  return `${seconds}s`;
+}
 
 function formatDate(dateStr) {
   if (!dateStr) return 'Never';
@@ -141,20 +156,22 @@ export default function AdminUsers() {
           <p className="text-xs text-emerald-700/80 mt-3 font-medium">Users with logged session record</p>
         </div>
 
-        {/* Stat 3: Active Accounts */}
+        {/* Stat 3: Total Time Spent on Site */}
         <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-card hover:shadow-card-hover transition-all">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Active Accounts</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Time Spent</p>
               <h3 className="text-2xl font-extrabold text-brand-blue mt-1">
-                {statsLoading ? '…' : stats.activeUsers ?? 0}
+                {statsLoading ? '…' : formatDuration(stats.totalTimeSpentSeconds || 0)}
               </h3>
             </div>
             <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-sm">
-              <i className="fa-solid fa-user-shield text-lg" aria-hidden="true" />
+              <i className="fa-solid fa-stopwatch text-lg" aria-hidden="true" />
             </div>
           </div>
-          <p className="text-xs text-slate-500 mt-3 font-medium">Active user profiles in database</p>
+          <p className="text-xs text-slate-500 mt-3 font-medium">
+            Avg {statsLoading ? '…' : formatDuration(stats.avgTimeSpentSeconds || 0)} per active user
+          </p>
         </div>
 
         {/* Stat 4: Verified Emails */}
@@ -305,6 +322,61 @@ export default function AdminUsers() {
                     Never
                   </span>
                 )}
+              </td>,
+
+              /* Time Spent / Duration on Site */
+              <td key="duration" className="text-center whitespace-nowrap">
+                {(() => {
+                  const now = new Date();
+                  const lastActive = u.lastActiveAt ? new Date(u.lastActiveAt) : null;
+                  const isActiveNow = lastActive && !isNaN(lastActive.getTime()) && (now - lastActive) < 3 * 60 * 1000;
+                  const totalSecs = u.totalTimeSpent || u.sessionDuration || 0;
+
+                  if (isActiveNow) {
+                    return (
+                      <div className="inline-flex flex-col items-center">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-extrabold border border-emerald-300 shadow-2xs">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                          <span>Active Now</span>
+                        </span>
+                        <span className="text-[10px] text-emerald-600 font-semibold mt-0.5">
+                          {formatDuration(totalSecs)} total
+                        </span>
+                      </div>
+                    );
+                  }
+
+                  if (totalSecs > 0) {
+                    return (
+                      <div className="inline-flex flex-col items-center">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-brand-blue text-xs font-bold border border-blue-200">
+                          <i className="fa-solid fa-hourglass-half text-[10px] text-brand-blue" />
+                          <span>{formatDuration(totalSecs)}</span>
+                        </span>
+                        {u.sessionDuration > 0 && u.sessionDuration !== totalSecs && (
+                          <span className="text-[10px] text-slate-400 mt-0.5">
+                            Last session: {formatDuration(u.sessionDuration)}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  if (u.lastLogin) {
+                    return (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-50 text-slate-600 text-xs font-medium border border-slate-200">
+                        <i className="fa-regular fa-clock text-[10px] text-slate-400" />
+                        <span>~1m</span>
+                      </span>
+                    );
+                  }
+
+                  return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 text-slate-400 text-xs font-medium">
+                      —
+                    </span>
+                  );
+                })()}
               </td>,
 
               /* Account Status */
