@@ -3,16 +3,10 @@ import { CATEGORY_SPECIFIC_FIELDS } from '../constants';
 import Field from './Field';
 
 export default function ListingInfoCard({ listing, images, category }) {
-  const typeKey = category?.id || listing?._type || listing?.category || 'properties';
+  const typeKey = listing?._type || category?.id || 'properties';
   const catFields = CATEGORY_SPECIFIC_FIELDS[typeKey] || category?.fields || [];
 
-  const rawSub = String(listing?.subcategory || listing?.subCategory || listing?.propertyType || '').toLowerCase();
-  const displaySubcategory = (() => {
-    if (rawSub.includes('plot') || rawSub.includes('site') || rawSub.includes('land')) return 'Plot';
-    if (rawSub.includes('villa')) return 'Villa';
-    if (rawSub.includes('flat') || rawSub.includes('apartment') || rawSub.includes('house') || rawSub.length > 0) return 'Flat';
-    return listing?.subcategory || listing?.subCategory || null;
-  })();
+  const displaySubcategory = listing?.subcategory || listing?.propertyType || null;
 
   return (
     <div className="xl:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-card p-6 space-y-6">
@@ -65,6 +59,21 @@ export default function ListingInfoCard({ listing, images, category }) {
         <Field label="Pincode" value={listing.pincode} />
         <Field label="Contact Phone" value={listing.contact || listing.contactPhone} />
         <Field label="Location / Landmark" value={listing.location} />
+        {(listing.locationUrl || listing.details?.locationUrl || listing.mapUrl || listing.googleMapsUrl) && (
+          <div className="sm:col-span-2">
+            <span className="text-xs text-slate-400 block mb-1">Google Maps Location</span>
+            <a
+              href={listing.locationUrl || listing.details?.locationUrl || listing.mapUrl || listing.googleMapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-blue hover:underline break-all"
+            >
+              <i className="fa-solid fa-map-location-dot" />
+              <span>{listing.locationUrl || listing.details?.locationUrl || listing.mapUrl || listing.googleMapsUrl}</span>
+              <i className="fa-solid fa-arrow-up-right-from-square text-[10px]" />
+            </a>
+          </div>
+        )}
         <Field label="Submitted" value={formatDate(listing.createdAt)} />
         <Field label="Last Updated" value={formatDate(listing.updatedAt)} />
       </div>

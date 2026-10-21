@@ -36,15 +36,13 @@ function buildOverrideForm(base, type) {
   COMMON_FIELDS.forEach((f) => {
     form[f.key] = base[f.key] ?? base.details?.[f.key] ?? form[f.key] ?? '';
   });
-  form.subcategory = base.subcategory || base.subCategory || base.details?.subcategory || '';
+  form.subcategory = base.subcategory || '';
   form.priceType = base.priceType || 'fixed';
-  form.videoUrl = base.videoUrl || base.video || base.details?.videoUrl || '';
-  form.pdfUrl = base.pdfUrl || base.brochure || base.details?.pdfUrl || '';
-  form.documents = Array.isArray(base.documents)
-    ? [...base.documents]
-    : (Array.isArray(base.details?.documents) ? [...base.details.documents] : []);
+  form.videoUrl = base.videoUrl || '';
+  form.pdfUrl = base.pdfUrl || base.brochure || '';
+  form.documents = Array.isArray(base.documents) ? [...base.documents] : [];
 
-  const typeKey = type || base._type || base.category || 'properties';
+  const typeKey = type || base._type || 'properties';
   const catFields = getCategoryFields(typeKey, form.subcategory);
   catFields.forEach((f) => {
     form[f.key] = base[f.key] ?? base.details?.[f.key] ?? form[f.key] ?? '';

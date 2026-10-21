@@ -18,6 +18,7 @@ export const COMMON_FIELDS = [
   { key: 'city', label: 'City', type: 'text', required: true },
   { key: 'area', label: 'Area / Locality', type: 'text' },
   { key: 'pincode', label: 'Pincode', type: 'text' },
+  { key: 'locationUrl', label: 'Location URL (Google Maps)', type: 'text', placeholder: 'e.g. https://maps.app.goo.gl/...' },
   { key: 'contact', label: 'Contact Phone', type: 'text' },
 ];
 
@@ -171,6 +172,7 @@ export const CATEGORY_SPECIFIC_FIELDS = {
     { key: 'projectCount', label: 'Total Projects', type: 'number', placeholder: 'e.g. 120' },
     { key: 'totalUnits', label: 'Total Units', type: 'text', placeholder: 'e.g. 200 Units' },
     { key: 'availableUnits', label: 'Available Units', type: 'number', placeholder: 'e.g. 5' },
+    { key: 'locationUrl', label: 'Add Location URL (Google Maps)', type: 'text', placeholder: 'e.g. https://maps.app.goo.gl/... or https://maps.google.com/?q=...' },
   ],
   'real-estate': [
     { key: 'bhk', label: 'BHK', type: 'text', placeholder: 'e.g. 2, 3 & 4 BHK or EOI' },
@@ -188,6 +190,7 @@ export const CATEGORY_SPECIFIC_FIELDS = {
     { key: 'projectCount', label: 'Total Projects', type: 'number', placeholder: 'e.g. 120' },
     { key: 'totalUnits', label: 'Total Units', type: 'text', placeholder: 'e.g. 200 Units' },
     { key: 'availableUnits', label: 'Available Units', type: 'number', placeholder: 'e.g. 5' },
+    { key: 'locationUrl', label: 'Add Location URL (Google Maps)', type: 'text', placeholder: 'e.g. https://maps.app.goo.gl/... or https://maps.google.com/?q=...' },
   ],
   vehicles: [
     { key: 'brand', label: 'Brand', type: 'text', placeholder: 'e.g. Toyota, Honda' },

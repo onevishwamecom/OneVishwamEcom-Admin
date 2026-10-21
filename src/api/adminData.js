@@ -14,7 +14,11 @@ function dedupe(key, fn) {
 export function listingType(category) {
   const map = {
     'real-estate': 'properties',
+    properties: 'properties',
     vehicle: 'vehicles',
+    vehicles: 'vehicles',
+    automobile: 'vehicles',
+    automobiles: 'vehicles',
     grocery: 'groceries',
     garment: 'garments',
     jewellery: 'jewellery',
@@ -215,6 +219,9 @@ function invalidateDataCaches() {
   // Clear in-flight promises to prevent stale data on immediate refetch
   clearInflight();
   inFlight.clear();
+  try {
+    localStorage.setItem('admin_listings_updated', String(Date.now()));
+  } catch (e) {}
 }
 
 async function approveListing(type, id) {
