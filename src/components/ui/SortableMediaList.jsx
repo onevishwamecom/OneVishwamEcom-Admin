@@ -184,7 +184,7 @@ export default function SortableMediaList({
   media = [],
   onMediaChange,
   onUploadProgress,
-  maxMedia = 6,
+  maxMedia = 5,
   accept = 'image/*,video/*',
   disabled = false,
   showMainBadge = true,

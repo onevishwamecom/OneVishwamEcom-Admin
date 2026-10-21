@@ -21,14 +21,21 @@ export default function MediaAttachmentsSection({
     <>
       {/* Media / Photos Section */}
       <div className="border-t border-slate-100 pt-5">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
-          <i className="fa-solid fa-images text-indigo-600" />
-          Media ({images.length})
-        </h4>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+            <i className="fa-solid fa-images text-indigo-600" />
+            Media ({images.length}/5)
+          </h4>
+          {images.length >= 5 && (
+            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+              Max 5 Reached
+            </span>
+          )}
+        </div>
         <SortableMediaList
           media={media}
           onMediaChange={onMediaChange}
-          maxMedia={6}
+          maxMedia={5}
           accept="image/*,video/*"
           disabled={false}
           showMainBadge={true}
@@ -40,15 +47,55 @@ export default function MediaAttachmentsSection({
           onChange={onFileSelect}
           id={`${idPrefix}-media-upload`}
         />
-        <button
-          type="button"
-          onClick={() => document.getElementById(`${idPrefix}-media-upload`)?.click()}
-          disabled={pendingUploads > 0 || (images?.length || 0) >= 6}
-          className="mt-3 inline-flex items-center gap-2 rounded-xl border-2 border-dashed border-slate-300 text-slate-600 hover:border-brand-blue hover:text-brand-blue px-4 py-2.5 text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-        >
-          <i className="fa-solid fa-cloud-arrow-up" aria-hidden="true" />
-          Add Image
-        </button>
+
+        <div className="mt-3 flex flex-col sm:flex-row gap-2 items-center">
+          <button
+            type="button"
+            onClick={() => document.getElementById(`${idPrefix}-media-upload`)?.click()}
+            disabled={pendingUploads > 0 || (images?.length || 0) >= 5}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 text-slate-600 hover:border-brand-blue hover:text-brand-blue px-4 py-2 text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          >
+            <i className="fa-solid fa-cloud-arrow-up" aria-hidden="true" />
+            Upload File
+          </button>
+
+          {/* Direct Link Input */}
+          <div className="flex-1 w-full flex items-center gap-1.5">
+            <input
+              type="url"
+              id={`${idPrefix}-direct-img-url`}
+              disabled={pendingUploads > 0 || (images?.length || 0) >= 5}
+              placeholder={(images?.length || 0) >= 5 ? "Max 5 reached" : "Or paste direct image URL (bypasses storage)"}
+              className="flex-1 text-xs px-3 py-2 rounded-xl border border-slate-200 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue disabled:bg-slate-100 disabled:cursor-not-allowed"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  const val = e.currentTarget.value.trim();
+                  if (val && (images?.length || 0) < 5) {
+                    onMediaChange([...media, { id: `media-${val}-${Date.now()}`, type: 'image', url: val, isExisting: true }]);
+                    e.currentTarget.value = '';
+                  }
+                }
+              }}
+            />
+            <button
+              type="button"
+              disabled={pendingUploads > 0 || (images?.length || 0) >= 5}
+              onClick={() => {
+                const input = document.getElementById(`${idPrefix}-direct-img-url`);
+                const val = input?.value?.trim();
+                if (val && (images?.length || 0) < 5) {
+                  onMediaChange([...media, { id: `media-${val}-${Date.now()}`, type: 'image', url: val, isExisting: true }]);
+                  input.value = '';
+                }
+              }}
+              className="px-3 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shrink-0 disabled:opacity-40 cursor-pointer"
+            >
+              + Link
+            </button>
+          </div>
+        </div>
+
         {pendingUploads > 0 && (
           <p className="mt-2 text-xs text-slate-500 flex items-center gap-2">
             <i className="fa-solid fa-spinner fa-spin text-brand-blue" />

@@ -60,7 +60,7 @@ export default function useListingMediaManager({
         } else if (mediaType === 'documents') {
           onDocumentUploaded?.(downloadUrl);
         } else {
-          setImages((prev) => [...prev, downloadUrl]);
+          setImages((prev) => [...prev, downloadUrl].slice(0, 5));
         }
       }
     } catch (err) {

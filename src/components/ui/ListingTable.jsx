@@ -18,6 +18,8 @@ export const DEFAULT_CATEGORY_CONFIG = {
   garments: { label: 'Garments', icon: 'fa-shirt', color: 'bg-purple-50 text-purple-700 border-purple-200' },
   jewellery: { label: 'Jewellery', icon: 'fa-gem', color: 'bg-cyan-50 text-cyan-700 border-cyan-200' },
   finance: { label: 'Finance', icon: 'fa-building-columns', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+  'finance-offerings': { label: 'Finance Offerings', icon: 'fa-building-columns', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+  electronics: { label: 'Electronics', icon: 'fa-tv', color: 'bg-teal-50 text-teal-700 border-teal-200' },
   services: { label: 'Services', icon: 'fa-wrench', color: 'bg-slate-100 text-slate-700 border-slate-200' },
 };
 
