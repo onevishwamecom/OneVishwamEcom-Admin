@@ -13,6 +13,8 @@ export const CATEGORY_CONFIG = {
   finance: { label: 'Finance', icon: 'fa-building-columns', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
   'finance-offerings': { label: 'Finance Offerings', icon: 'fa-building-columns', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
   electronics: { label: 'Electronics', icon: 'fa-tv', color: 'bg-teal-50 text-teal-700 border-teal-200' },
+  bedding: { label: 'Bedding', icon: 'fa-bed', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  'bedding-comfort': { label: 'Bedding & Comfort', icon: 'fa-bed', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   services: { label: 'Services', icon: 'fa-wrench', color: 'bg-slate-100 text-slate-700 border-slate-200' },
 };
 
