@@ -15,8 +15,10 @@
  * ============================================================================
  */
 
+import { memoryCache } from '../../utils/lruCache';
+
 const STORAGE_PREFIX = 'onevishwam_cache';
-const CACHE_VERSION = 7; // bumped to invalidate cached contributor listing counts
+const CACHE_VERSION = 7;
 
 /** Configurable freshness lifetimes (ms) — tune per data type, never hardcode. */
 export const CACHE_TTL = {
@@ -95,7 +97,16 @@ export function clearInflight(key) {
 
 export const cache = {
   get(namespace, key) {
-    return safeRead(storageKey(namespace, key));
+    const sKey = storageKey(namespace, key);
+    const memRecord = memoryCache.get(sKey);
+    if (memRecord) return memRecord;
+
+    const diskRecord = safeRead(sKey);
+    if (diskRecord) {
+      memoryCache.set(sKey, diskRecord);
+      return diskRecord;
+    }
+    return null;
   },
 
   getWithMetadata(namespace, key) {
@@ -104,13 +115,17 @@ export const cache = {
 
   set(namespace, key, data, params = {}) {
     const record = { data, params, cachedAt: Date.now(), version: CACHE_VERSION };
-    safeWrite(storageKey(namespace, key), record);
+    const sKey = storageKey(namespace, key);
+    memoryCache.set(sKey, record);
+    safeWrite(sKey, record);
     return record;
   },
 
   remove(namespace, key) {
+    const sKey = storageKey(namespace, key);
+    memoryCache.delete(sKey);
     try {
-      localStorage.removeItem(storageKey(namespace, key));
+      localStorage.removeItem(sKey);
     } catch {
       /* ignore */
     }
@@ -124,7 +139,10 @@ export const cache = {
       const k = localStorage.key(i);
       if (k && k.startsWith(start + prefix)) doomed.push(k);
     }
-    doomed.forEach((k) => localStorage.removeItem(k));
+    doomed.forEach((k) => {
+      memoryCache.delete(k);
+      localStorage.removeItem(k);
+    });
   },
 
   clearNamespace(namespace) {
@@ -132,6 +150,7 @@ export const cache = {
   },
 
   clear() {
+    memoryCache.clear();
     const start = `${STORAGE_PREFIX}_v${CACHE_VERSION}_`;
     const doomed = [];
     for (let i = 0; i < localStorage.length; i++) {
