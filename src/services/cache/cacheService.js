@@ -131,18 +131,33 @@ export const cache = {
     }
   },
 
-  /** Remove every cache entry whose key starts with `prefix` in a namespace. */
+  /** Remove every cache entry whose key starts with `prefix` in a namespace, or contains `prefix` */
   removeByPrefix(namespace, prefix) {
     const start = `${STORAGE_PREFIX}_v${CACHE_VERSION}_${namespace}_`;
     const doomed = [];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (k && k.startsWith(start + prefix)) doomed.push(k);
+      if (
+        k &&
+        (k.startsWith(start + prefix) ||
+          k.includes(`_${prefix}`) ||
+          (prefix && k.endsWith(`_${prefix}`)))
+      ) {
+        doomed.push(k);
+      }
     }
     doomed.forEach((k) => {
       memoryCache.delete(k);
-      localStorage.removeItem(k);
+      try {
+        localStorage.removeItem(k);
+      } catch {
+        /* ignore */
+      }
     });
+    // Invalidate in memory cache
+    if (!prefix || prefix.startsWith('listing') || prefix.startsWith('stats')) {
+      memoryCache.clear();
+    }
   },
 
   clearNamespace(namespace) {

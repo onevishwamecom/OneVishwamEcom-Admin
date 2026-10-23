@@ -8,6 +8,7 @@ export default function useListingMediaManager({
   typeKey = 'properties',
   images = [],
   setImages,
+  onImagesChange,
   onVideoUploaded,
   onDocumentUploaded,
 }) {
@@ -33,9 +34,10 @@ export default function useListingMediaManager({
       }
       const removedUrls = prevUrls.filter((url) => !newUrls.includes(url) && url?.includes('firebasestorage'));
       removedUrls.forEach(deleteMediaFromStorage);
+      onImagesChange?.(newUrls);
       return newUrls;
     });
-  }, [setImages]);
+  }, [setImages, onImagesChange]);
 
   const handleFileUpload = useCallback(async (file) => {
     if (!file) return;
@@ -60,7 +62,11 @@ export default function useListingMediaManager({
         } else if (mediaType === 'documents') {
           onDocumentUploaded?.(downloadUrl);
         } else {
-          setImages((prev) => [...prev, downloadUrl].slice(0, 5));
+          setImages((prev) => {
+            const next = [...prev, downloadUrl].slice(0, 5);
+            onImagesChange?.(next);
+            return next;
+          });
         }
       }
     } catch (err) {
@@ -68,7 +74,7 @@ export default function useListingMediaManager({
     } finally {
       setPendingUploads((prev) => Math.max(0, prev - 1));
     }
-  }, [listing, typeKey, setImages, onVideoUploaded, onDocumentUploaded]);
+  }, [listing, typeKey, setImages, onImagesChange, onVideoUploaded, onDocumentUploaded]);
 
   const handleFileSelect = useCallback((e) => {
     const file = e.target.files[0];
@@ -118,6 +124,44 @@ export default function useListingMediaManager({
     }
   }, [listing, typeKey, onDocumentUploaded]);
 
+  const movePhoto = useCallback((fromIndex, toIndex) => {
+    if (fromIndex === toIndex) return;
+    setImages((prev) => {
+      const list = prev || [];
+      if (toIndex < 0 || toIndex >= list.length || fromIndex < 0 || fromIndex >= list.length) return list;
+      const next = [...list];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      onImagesChange?.(next);
+      return next;
+    });
+  }, [setImages, onImagesChange]);
+
+  const removePhoto = useCallback((index) => {
+    setImages((prev) => {
+      const list = prev || [];
+      const removed = list[index];
+      if (removed && removed.includes('firebasestorage')) {
+        deleteMediaFromStorage(removed);
+      }
+      const next = list.filter((_, idx) => idx !== index);
+      onImagesChange?.(next);
+      return next;
+    });
+  }, [setImages, onImagesChange]);
+
+  const addPhotoUrl = useCallback((url) => {
+    const trimmed = (url || '').trim();
+    if (!trimmed) return;
+    setImages((prev) => {
+      const list = prev || [];
+      if (list.length >= 5) return list;
+      const next = [...list, trimmed];
+      onImagesChange?.(next);
+      return next;
+    });
+  }, [setImages, onImagesChange]);
+
   return {
     media,
     pendingUploads,
@@ -126,5 +170,8 @@ export default function useListingMediaManager({
     handleFileSelect,
     handleVideoUpload,
     handleDocumentUpload,
+    movePhoto,
+    removePhoto,
+    addPhotoUrl,
   };
 }

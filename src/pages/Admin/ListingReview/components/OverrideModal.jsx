@@ -53,18 +53,37 @@ export default function OverrideModal({
     });
   }, [listing, setOverrideForm]);
 
+  const handleImagesChange = useCallback((newImages) => {
+    setOverrideImages(newImages);
+    setOverrideForm((prev) => ({
+      ...prev,
+      images: newImages,
+      photos: newImages,
+      details: {
+        ...(typeof prev?.details === 'object' && prev.details !== null ? prev.details : {}),
+        images: newImages,
+        photos: newImages,
+      },
+    }));
+  }, [setOverrideImages, setOverrideForm]);
+
   const {
     media,
     pendingUploads,
     handleMediaChange,
+    handleFileUpload,
     handleFileSelect,
     handleVideoUpload,
     handleDocumentUpload,
+    movePhoto,
+    removePhoto,
+    addPhotoUrl,
   } = useListingMediaManager({
     listing,
     typeKey,
     images: overrideImages,
     setImages: setOverrideImages,
+    onImagesChange: handleImagesChange,
     onVideoUploaded,
     onDocumentUploaded,
   });
@@ -160,6 +179,10 @@ export default function OverrideModal({
           media={media}
           images={overrideImages}
           onMediaChange={handleMediaChange}
+          movePhoto={movePhoto}
+          removePhoto={removePhoto}
+          addPhotoUrl={addPhotoUrl}
+          onAddPhoto={handleFileUpload}
           onFileSelect={handleFileSelect}
           onVideoUpload={handleVideoUpload}
           onDocumentUpload={handleDocumentUpload}

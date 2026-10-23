@@ -249,12 +249,33 @@ async function cancelListing(type, id, reason) {
 }
 
 async function updateListing(type, id, updates) {
-  if (updates.status === 'approved') return approveListing(type, id);
-  if (updates.status === 'changes-required') return requestChanges(type, id, updates.reason);
-  if (updates.status === 'cancelled' || updates.status === 'rejected') return cancelListing(type, id, updates.reason);
-  const item = unwrap(
-    await client.put(`/admin/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}`, updates),
-  );
+  let item = null;
+  try {
+    // Primary /listings/:type/:id endpoint
+    item = unwrap(
+      await client.patch(`/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}`, updates),
+    );
+  } catch (err) {
+    try {
+      item = unwrap(
+        await client.put(`/admin/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}`, updates),
+      );
+    } catch {
+      item = unwrap(
+        await client.patch(`/admin/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}`, updates),
+      );
+    }
+  }
+  invalidateDataCaches();
+  return item?.item ? normalizeListing(item.item) : null;
+}
+
+async function reorderListingImages(type, id, images) {
+  const payload = Array.isArray(images) ? { images } : images;
+  const url = type
+    ? `/admin/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}/images/reorder`
+    : `/admin/products/${encodeURIComponent(id)}/images/reorder`;
+  const item = unwrap(await client.patch(url, payload));
   invalidateDataCaches();
   return item?.item ? normalizeListing(item.item) : null;
 }
@@ -323,6 +344,7 @@ export const adminApi = {
   requestChanges,
   cancelListing,
   updateListing,
+  reorderListingImages,
   updateAvailabilityStatus,
   deleteListing,
   getCategories,

@@ -64,6 +64,20 @@ export default function EditListingModal({ open, onClose, listing, category, onC
     }));
   }, []);
 
+  const handleImagesChange = useCallback((newImages) => {
+    setImages(newImages);
+    setForm((prev) => ({
+      ...prev,
+      images: newImages,
+      photos: newImages,
+      details: {
+        ...(typeof prev?.details === 'object' && prev.details !== null ? prev.details : {}),
+        images: newImages,
+        photos: newImages,
+      },
+    }));
+  }, []);
+
   const {
     media,
     pendingUploads,
@@ -71,11 +85,15 @@ export default function EditListingModal({ open, onClose, listing, category, onC
     handleFileSelect,
     handleVideoUpload,
     handleDocumentUpload,
+    movePhoto,
+    removePhoto,
+    addPhotoUrl,
   } = useListingMediaManager({
     listing,
     typeKey,
     images,
     setImages,
+    onImagesChange: handleImagesChange,
     onVideoUploaded,
     onDocumentUploaded,
   });
@@ -161,6 +179,9 @@ export default function EditListingModal({ open, onClose, listing, category, onC
           media={media}
           images={images}
           onMediaChange={handleMediaChange}
+          movePhoto={movePhoto}
+          removePhoto={removePhoto}
+          addPhotoUrl={addPhotoUrl}
           onFileSelect={handleFileSelect}
           onVideoUpload={handleVideoUpload}
           onDocumentUpload={handleDocumentUpload}

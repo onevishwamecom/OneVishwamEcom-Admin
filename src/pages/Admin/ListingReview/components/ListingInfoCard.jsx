@@ -2,7 +2,7 @@ import { formatINR, formatDate } from '../../../../utils';
 import { CATEGORY_SPECIFIC_FIELDS } from '../constants';
 import Field from './Field';
 
-export default function ListingInfoCard({ listing, images, category }) {
+export default function ListingInfoCard({ listing, images = [], category }) {
   const typeKey = listing?._type || category?.id || 'properties';
   const catFields = CATEGORY_SPECIFIC_FIELDS[typeKey] || category?.fields || [];
 
@@ -140,30 +140,43 @@ export default function ListingInfoCard({ listing, images, category }) {
       })()}
 
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Images ({images.length})</p>
+        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+          Images ({images.length})
+        </p>
         {images.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400">
             <i className="fa-solid fa-image text-3xl mb-2" aria-hidden="true" />
             <p className="text-xs font-bold uppercase tracking-wider">No images uploaded</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             {images.map((url, i) => (
-              <div key={`${url}-${i}`} className="aspect-square rounded-2xl overflow-hidden bg-slate-100 border border-slate-200">
-                {url ? (
-                  <img
-                    src={url}
-                    alt={`listing-${i}`}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-slate-300">
-                    <i className="fa-solid fa-image text-xl" />
-                  </div>
-                )}
+              <div
+                key={i}
+                className={`relative aspect-square rounded-2xl overflow-hidden bg-slate-100 border ${
+                  i === 0 ? 'border-amber-400 ring-2 ring-amber-400/20' : 'border-slate-200'
+                }`}
+              >
+                <img
+                  src={url}
+                  alt={`Position ${i + 1}`}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+                <div className="absolute top-2 left-2 z-10 pointer-events-none">
+                  {i === 0 ? (
+                    <span className="bg-amber-400 text-slate-900 text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
+                      <i className="fa-solid fa-star text-[8px]" />
+                      <span>1st · Cover</span>
+                    </span>
+                  ) : (
+                    <span className="bg-slate-900/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs">
+                      {i + 1}{i === 1 ? 'nd' : i === 2 ? 'rd' : 'th'}
+                    </span>
+                  )}
+                </div>
               </div>
             ))}
           </div>
