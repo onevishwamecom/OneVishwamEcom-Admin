@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { DataTable, StatusBadge } from '../../../components/Admin/AdminUi';
 import { PageContainer, PageHeader, PageSection } from '../../../components/layout/PageContainer';
 import useAsyncData from '../../../hooks/useAsyncData';
@@ -7,14 +8,17 @@ import { CACHE_TTL } from '../../../services/cache/cacheService';
 import { ErrorState } from '../../../components/skeleton';
 
 import UserStatsCards from './components/UserStatsCards';
+import UserActivityModal from './components/UserActivityModal';
 
 const USER_COLUMNS = [
   { key: 'user', label: 'User Details' },
   { key: 'contact', label: 'Contact Info' },
+  { key: 'interests', label: 'Sector Interests' },
   { key: 'location', label: 'Location' },
   { key: 'lastLogin', label: 'Last Logged In', align: 'center' },
   { key: 'duration', label: 'Time Spent on Site', align: 'center' },
   { key: 'status', label: 'Account Status', align: 'center' },
+  { key: 'activity', label: 'Browsing Activity', align: 'center' },
 ];
 
 function formatDuration(totalSeconds) {
@@ -62,6 +66,7 @@ function timeAgo(dateStr) {
 export default function AdminUsers() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedUserForActivity, setSelectedUserForActivity] = useState(null);
 
   const { data: statsData, loading: statsLoading } = useAsyncData(
     () => adminApi.getUserStats(),
@@ -192,21 +197,27 @@ export default function AdminUsers() {
             renderRow={(u) => [
               /* User Details */
               <td key="user" className="py-3">
-                <div className="flex items-center gap-3">
+                <Link
+                  to={`/admin/users/${u._id}`}
+                  className="flex items-center gap-3 group/user hover:opacity-90 transition-opacity"
+                  title="View full customer profile and activity"
+                >
                   {u.avatar ? (
                     <img
                       src={u.avatar}
                       alt={u.name}
-                      className="h-10 w-10 rounded-xl object-cover border border-slate-100 shadow-sm shrink-0"
+                      className="h-10 w-10 rounded-xl object-cover border border-slate-100 shadow-sm shrink-0 group-hover/user:ring-2 group-hover/user:ring-brand-blue/30 transition-all"
                     />
                   ) : (
-                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-brand-blue/80 to-indigo-600 flex items-center justify-center text-white font-extrabold text-sm shadow-sm shrink-0">
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-brand-blue/80 to-indigo-600 flex items-center justify-center text-white font-extrabold text-sm shadow-sm shrink-0 group-hover/user:ring-2 group-hover/user:ring-brand-blue/30 transition-all">
                       {u.name.charAt(0).toUpperCase()}
                     </div>
                   )}
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-900 truncate text-sm">{u.name}</span>
+                      <span className="font-bold text-slate-900 truncate text-sm group-hover/user:text-brand-blue transition-colors">
+                        {u.name}
+                      </span>
                       {u.isEmailVerified && (
                         <span title="Email Verified" className="text-emerald-500 text-xs">
                           <i className="fa-solid fa-circle-check" />
@@ -215,7 +226,7 @@ export default function AdminUsers() {
                     </div>
                     <span className="text-[11px] text-slate-400 block font-mono">ID: {u._id}</span>
                   </div>
-                </div>
+                </Link>
               </td>,
 
               /* Contact Info */
@@ -230,6 +241,40 @@ export default function AdminUsers() {
                     <span>{u.phone || '—'}</span>
                   </p>
                 </div>
+              </td>,
+
+              /* Sector Interests */
+              <td key="interests" className="text-xs">
+                {u.interests && u.interests.length > 0 ? (
+                  <div className="flex flex-wrap items-center gap-1.5 max-w-[200px]">
+                    {u.interests.slice(0, 3).map((it) => {
+                      const isPrimary = it.category?.toLowerCase() === (u.primaryInterest || '').toLowerCase();
+                      return (
+                        <span
+                          key={it.category}
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold border capitalize ${
+                            isPrimary
+                              ? 'bg-brand-blue/10 text-brand-blue border-brand-blue/30 shadow-2xs'
+                              : 'bg-slate-100 text-slate-700 border-slate-200'
+                          }`}
+                        >
+                          <span>{it.category}</span>
+                          <span className="text-[10px] opacity-75">({it.viewCount})</span>
+                        </span>
+                      );
+                    })}
+                    {u.interests.length > 3 && (
+                      <span className="text-[10px] text-slate-400 font-semibold">
+                        +{u.interests.length - 3}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-[11px] text-slate-400">
+                    <i className="fa-solid fa-compass text-[10px]" />
+                    <span>General</span>
+                  </span>
+                )}
               </td>,
 
               /* Location */
@@ -323,10 +368,45 @@ export default function AdminUsers() {
               <td key="status" className="text-center whitespace-nowrap">
                 <StatusBadge status={u.status || 'active'} />
               </td>,
+
+              /* Activity Details Action */
+              <td key="activity" className="text-center whitespace-nowrap">
+                <div className="inline-flex items-center gap-1.5">
+                  <Link
+                    to={`/admin/users/${u._id}`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-blue hover:bg-blue-700 text-white font-bold text-xs transition-all shadow-2xs hover:shadow-sm"
+                    title="Open full customer details & interest analytics page"
+                  >
+                    <i className="fa-solid fa-user text-[10px]" />
+                    <span>Profile</span>
+                    <i className="fa-solid fa-arrow-right text-[9px] opacity-75" />
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedUserForActivity(u)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all cursor-pointer"
+                    title="Quick preview activity modal"
+                  >
+                    <i className="fa-solid fa-chart-pie text-[11px] text-slate-500" />
+                    {u.browsingHistory && u.browsingHistory.length > 0 && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    )}
+                  </button>
+                </div>
+              </td>,
             ]}
           />
         )}
       </PageSection>
+
+      {/* User Interests & Activity History Modal */}
+      {selectedUserForActivity && (
+        <UserActivityModal
+          user={selectedUserForActivity}
+          onClose={() => setSelectedUserForActivity(null)}
+        />
+      )}
     </PageContainer>
   );
 }

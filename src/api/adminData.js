@@ -49,7 +49,45 @@ function flattenResults(data) {
 }
 
 async function getStats() {
-  return dedupe('stats', () => client.get('/admin/listings/stats').then(unwrap));
+  return dedupe('stats', async () => {
+    const raw = await client.get('/admin/listings/stats').then(unwrap).catch(() => null);
+    const data = raw || {};
+    const total = Number(data.totalListings ?? data.total ?? 0);
+    const pending = Number(data.pendingListings ?? data.pending ?? 0);
+    const approved = Number(data.approvedListings ?? data.approved ?? 0);
+    const cancelled = Number(data.cancelledListings ?? data.cancelled ?? 0);
+    const changesRequired = Number(data.changesRequiredListings ?? data['changes-required'] ?? 0);
+
+    return {
+      ...data,
+      total,
+      totalListings: total,
+      pending,
+      pendingListings: pending,
+      approved,
+      approvedListings: approved,
+      cancelled,
+      cancelledListings: cancelled,
+      'changes-required': changesRequired,
+      changesRequiredListings: changesRequired,
+      userStats: data.userStats || {
+        totalUsers: 0,
+        loggedInUsers: 0,
+        activeUsers: 0,
+        emailVerifiedUsers: 0,
+      },
+      visitorStats: data.visitorStats || null,
+    };
+  });
+}
+
+async function getVisitorStats() {
+  return dedupe('visitorStats', () =>
+    client
+      .get('/visitors/count')
+      .then(unwrap)
+      .catch(() => null)
+  );
 }
 
 async function getContributors() {
@@ -304,6 +342,13 @@ async function getUsers(params = {}) {
   return dedupe(key, () => client.get(`/admin/users?${query}`).then(unwrap));
 }
 
+async function getUserActivity(id) {
+  if (!id) return null;
+  return dedupe(`userActivity:${id}`, () =>
+    client.get(`/admin/users/${encodeURIComponent(id)}/activity`).then(unwrap)
+  );
+}
+
 async function getBulkBatches(params = {}) {
   return client.get('/bulk-listing/batches', { params }).then(unwrap);
 }
@@ -334,12 +379,14 @@ async function addItemToBatch(batchId, data) {
 
 export const adminApi = {
   getStats,
+  getVisitorStats,
   getContributors,
   getContributorDetail,
   getListings,
   getListing,
   getUserStats,
   getUsers,
+  getUserActivity,
   approveListing,
   requestChanges,
   cancelListing,

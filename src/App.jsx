@@ -16,6 +16,7 @@ const AdminActivity = lazy(() => import('./pages/Admin/AdminActivity'));
 const ListedItems = lazy(() => import('./pages/Admin/ListedItems'));
 const ListingReview = lazy(() => import('./pages/Admin/ListingReview'));
 const AdminUsers = lazy(() => import('./pages/Admin/AdminUsers'));
+const CustomerProfile = lazy(() => import('./pages/Admin/CustomerProfile'));
 const AdminBulkListings = lazy(() => import('./pages/Admin/AdminBulkListings'));
 
 function RequireAdmin({ children }) {
@@ -69,6 +70,7 @@ function App() {
               <Route path="contributors" element={<AdminContributors />} />
               <Route path="contributors/:id" element={<ContributorProfile />} />
               <Route path="users" element={<AdminUsers />} />
+              <Route path="users/:id" element={<CustomerProfile />} />
               <Route path="categories" element={<AdminCategories />} />
               <Route path="activity" element={<AdminActivity />} />
             </Route>
