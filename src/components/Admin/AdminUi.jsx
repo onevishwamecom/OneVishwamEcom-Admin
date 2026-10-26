@@ -1,4 +1,5 @@
 import React from 'react';
+import LottieFeedbackAnimation from '../ui/LottieFeedbackAnimation';
 
 const STATUS_CONFIG = {
   pending: {
@@ -91,15 +92,29 @@ export function StatusBadge({ status, className = '' }) {
   );
 }
 
-export function EmptyState({ icon = 'fa-inbox', title, message, action }) {
+export function EmptyState({
+  icon = 'fa-inbox',
+  title,
+  message,
+  action,
+  animationType = 'emptyCatalog',
+  showAnimation = true,
+  className = '',
+}) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 bg-white rounded-3xl border border-slate-100 shadow-sm text-center px-4">
-      <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-brand-blue/10 to-brand-blue/5 flex items-center justify-center mb-5">
-        <i className={`fa-solid ${icon} text-3xl text-brand-blue/60`} aria-hidden="true" />
-      </div>
-      <h3 className="text-lg font-bold text-slate-900 mb-1">{title}</h3>
-      {message && <p className="text-sm font-medium text-slate-500 max-w-sm">{message}</p>}
-      {action && <div className="mt-6">{action}</div>}
+    <div className={`flex flex-col items-center justify-center py-12 bg-white rounded-3xl border border-slate-100 shadow-xs text-center px-4 animate-fade-in ${className}`}>
+      {showAnimation ? (
+        <div className="mb-2">
+          <LottieFeedbackAnimation type={animationType} size="md" fallbackIcon={`fa-solid ${icon}`} />
+        </div>
+      ) : (
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-blue/10 to-brand-blue/5 flex items-center justify-center mb-4">
+          <i className={`fa-solid ${icon} text-2xl text-brand-blue/60`} aria-hidden="true" />
+        </div>
+      )}
+      <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-1">{title}</h3>
+      {message && <p className="text-xs sm:text-sm font-medium text-slate-500 max-w-sm">{message}</p>}
+      {action && <div className="mt-5">{action}</div>}
     </div>
   );
 }
@@ -234,6 +249,7 @@ export function DataTable({
   emptyIcon = 'fa-inbox',
   emptyTitle = 'No data',
   emptyMessage = '',
+  emptyAnimationType = 'emptyCatalog',
   className = '',
   page: controlledPage,
   rowsPerPage = 10,
@@ -288,7 +304,7 @@ export function DataTable({
             {totalRows === 0 ? (
               <tr>
                 <td colSpan={totalCols} className="p-0">
-                  <EmptyState icon={emptyIcon} title={emptyTitle} message={emptyMessage} />
+                  <EmptyState icon={emptyIcon} title={emptyTitle} message={emptyMessage} animationType={emptyAnimationType} />
                 </td>
               </tr>
             ) : (

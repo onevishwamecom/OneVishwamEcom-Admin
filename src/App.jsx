@@ -18,6 +18,7 @@ const ListingReview = lazy(() => import('./pages/Admin/ListingReview'));
 const AdminUsers = lazy(() => import('./pages/Admin/AdminUsers'));
 const CustomerProfile = lazy(() => import('./pages/Admin/CustomerProfile'));
 const AdminBulkListings = lazy(() => import('./pages/Admin/AdminBulkListings'));
+const AdminNotFound = lazy(() => import('./pages/Admin/AdminNotFound'));
 
 function RequireAdmin({ children }) {
   const { isAdminLoggedIn } = useAdminAuth();
@@ -73,6 +74,7 @@ function App() {
               <Route path="users/:id" element={<CustomerProfile />} />
               <Route path="categories" element={<AdminCategories />} />
               <Route path="activity" element={<AdminActivity />} />
+              <Route path="*" element={<AdminNotFound />} />
             </Route>
             <Route path="*" element={<Navigate to="/admin/login" replace />} />
           </Routes>
