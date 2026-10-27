@@ -22,7 +22,7 @@ export default defineConfig({
         manualChunks: {
           vendor: ["react", "react-dom", "react-router-dom", "@reduxjs/toolkit", "react-redux"],
           ui: ["sweetalert2"],
-          dnd: ["@dnd-kit/core", "@dnd-kit/sortable", "@dnd-kit/utilities"],
+          dnd: ["@dnd-kit/react"],
         },
       },
     },

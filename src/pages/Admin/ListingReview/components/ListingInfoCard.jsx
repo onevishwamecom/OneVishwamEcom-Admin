@@ -59,17 +59,17 @@ export default function ListingInfoCard({ listing, images = [], category }) {
         <Field label="Pincode" value={listing.pincode} />
         <Field label="Contact Phone" value={listing.contact || listing.contactPhone} />
         <Field label="Location / Landmark" value={listing.location} />
-        {(listing.locationUrl || listing.details?.locationUrl || listing.mapUrl || listing.googleMapsUrl) && (
+        {(listing.mapUrl || listing.details?.mapUrl) && (
           <div className="sm:col-span-2">
             <span className="text-xs text-slate-400 block mb-1">Google Maps Location</span>
             <a
-              href={listing.locationUrl || listing.details?.locationUrl || listing.mapUrl || listing.googleMapsUrl}
+              href={listing.mapUrl || listing.details?.mapUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-blue hover:underline break-all"
             >
               <i className="fa-solid fa-map-location-dot" />
-              <span>{listing.locationUrl || listing.details?.locationUrl || listing.mapUrl || listing.googleMapsUrl}</span>
+              <span>{listing.mapUrl || listing.details?.mapUrl}</span>
               <i className="fa-solid fa-arrow-up-right-from-square text-[10px]" />
             </a>
           </div>
