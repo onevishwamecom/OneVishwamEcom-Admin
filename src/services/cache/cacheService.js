@@ -18,18 +18,18 @@
 import { memoryCache } from '../../utils/lruCache';
 
 const STORAGE_PREFIX = 'onevishwam_cache';
-const CACHE_VERSION = 7;
+const CACHE_VERSION = 8;
 
 /** Configurable freshness lifetimes (ms) — tune per data type, never hardcode. */
 export const CACHE_TTL = {
   user: 30 * 60 * 1000, // 30 min — profile, revalidated after login
-  dashboard: 30 * 1000, // 30 sec — admin stats (short TTL, always revalidates)
-  listings: 30 * 1000, // 30 sec — admin listing collections (short TTL for fresh data)
+  dashboard: 10 * 1000, // 10 sec — admin stats (short TTL, always revalidates)
+  listings: 15 * 1000, // 15 sec — admin listing collections (short TTL for fresh data)
   products: 10 * 60 * 1000, // 10 min — public listing collections
-  detail: 30 * 1000, // 30 sec — single listing detail (short TTL for admin review)
+  detail: 15 * 1000, // 15 sec — single listing detail (short TTL for admin review)
   similar: 10 * 60 * 1000, // 10 min — "similar items"
-  categories: 60 * 60 * 1000, // 1 hr — relatively static metadata
-  activity: 30 * 1000, // 30 sec — audit trail (short TTL)
+  categories: 10 * 1000, // 10 sec — dynamic category sector counts
+  activity: 15 * 1000, // 15 sec — audit trail (short TTL)
 };
 
 export const PUBLIC_NAMESPACE = 'public';

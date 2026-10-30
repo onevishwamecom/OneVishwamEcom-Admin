@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { label: 'Contributors', icon: 'fa-users', to: '/admin/contributors' },
   { label: 'Website Users', icon: 'fa-user-check', to: '/admin/users' },
   { label: 'Categories', icon: 'fa-table-cells-large', to: '/admin/categories' },
+  { label: 'Ribbon Alerts', icon: 'fa-bullhorn', to: '/admin/announcements' },
   { label: 'Activity', icon: 'fa-clock-rotate-left', to: '/admin/activity' },
 ];
 

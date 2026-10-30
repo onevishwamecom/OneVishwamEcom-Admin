@@ -32,18 +32,25 @@ function showErrorToast(title, text) {
 
 function buildOverrideForm(base, type) {
   if (!base) return {};
+  const isProperty = type === 'properties' || base._type === 'properties' || base.category === 'properties';
   const form = { ...(base.details || {}), ...base };
   COMMON_FIELDS.forEach((f) => {
     form[f.key] = base[f.key] ?? base.details?.[f.key] ?? form[f.key] ?? '';
   });
-  form.subcategory = base.subcategory || '';
+  const resolvedType = base.propertyType || base.subcategory || '';
+  if (isProperty) {
+    form.propertyType = resolvedType;
+    delete form.subcategory;
+  } else {
+    form.subcategory = base.subcategory || '';
+  }
   form.priceType = base.priceType || 'fixed';
   form.videoUrl = base.videoUrl || '';
   form.pdfUrl = base.pdfUrl || base.brochure || '';
   form.documents = Array.isArray(base.documents) ? [...base.documents] : [];
 
   const typeKey = type || base._type || 'properties';
-  const catFields = getCategoryFields(typeKey, form.subcategory);
+  const catFields = getCategoryFields(typeKey, resolvedType || form.subcategory);
   catFields.forEach((f) => {
     form[f.key] = base[f.key] ?? base.details?.[f.key] ?? form[f.key] ?? '';
   });
@@ -205,6 +212,9 @@ export default function useListingReview() {
       .filter(Boolean)
       .slice(0, 5);
 
+    const isProp = type === 'properties' || listing?._type === 'properties' || listing?.category === 'properties';
+    const cleanPropType = overrideForm.propertyType || overrideForm.subcategory || listing?.propertyType;
+
     const payload = {
       ...overrideForm,
       images: cleanImgs,
@@ -215,8 +225,15 @@ export default function useListingReview() {
         photos: cleanImgs,
       },
     };
-    // Status is managed via dedicated workflow modals, omit from override body
-    delete payload.status;
+    if (isProp) {
+      payload.propertyType = cleanPropType;
+      if (payload.details && typeof payload.details === 'object') {
+        payload.details.propertyType = cleanPropType;
+      }
+      delete payload.subcategory;
+    }
+    // Edits made in admin must not become pending status; let it be in approved
+    payload.status = 'approved';
     if (payload.possessionStatus !== undefined) {
       payload.possession = payload.possessionStatus;
       if (payload.details && typeof payload.details === "object") {

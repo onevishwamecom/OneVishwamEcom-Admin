@@ -12,23 +12,36 @@ function dedupe(key, fn) {
 }
 
 export function listingType(category) {
+  if (!category) return '';
+  const normalized = String(category).trim().toLowerCase();
   const map = {
     'real-estate': 'properties',
+    property: 'properties',
     properties: 'properties',
     vehicle: 'vehicles',
     vehicles: 'vehicles',
     automobile: 'vehicles',
     automobiles: 'vehicles',
     grocery: 'groceries',
+    groceries: 'groceries',
     garment: 'garments',
+    garments: 'garments',
     jewellery: 'jewellery',
+    jewelry: 'jewellery',
     finance: 'finance',
+    service: 'services',
+    services: 'services',
+    electronic: 'consumer-electronics',
+    electronics: 'consumer-electronics',
+    'consumer-electronics': 'consumer-electronics',
+    bedding: 'bedding-comfort',
+    'bedding-comfort': 'bedding-comfort',
   };
-  return map[category] || 'properties';
+  return map[normalized] || normalized;
 }
 
 function normalizeListing(item) {
-  const type = item._type || listingType(item.category);
+  const type = item._type || listingType(item.category) || 'properties';
   return { ...item, _type: type };
 }
 
@@ -208,15 +221,16 @@ async function getCategories() {
   const stats = await getStats();
   const byType = stats?.byCategory || {};
   return CATEGORIES.map((category) => {
-    const catStats = byType[category.id] || byType[listingType(category.id)] || {};
+    const canonical = listingType(category.id);
+    const catStats = byType[category.id] || (canonical && canonical !== category.id ? byType[canonical] : null) || {};
     return {
       id: category.id,
       ...category,
-      total: catStats.total || 0,
-      pending: catStats.pending || 0,
-      approved: catStats.approved || 0,
-      changesRequired: catStats['changes-required'] || 0,
-      cancelled: catStats.cancelled || 0,
+      total: Number(catStats.total || 0),
+      pending: Number(catStats.pending || 0),
+      approved: Number(catStats.approved || 0),
+      changesRequired: Number(catStats['changes-required'] || 0),
+      cancelled: Number(catStats.cancelled || 0),
     };
   });
 }
@@ -288,19 +302,23 @@ async function cancelListing(type, id, reason) {
 
 async function updateListing(type, id, updates) {
   let item = null;
+  const payload = {
+    ...updates,
+    status: updates.status && updates.status !== 'pending' ? updates.status : 'approved',
+  };
   try {
-    // Primary /listings/:type/:id endpoint
+    // Primary /admin/listings/:type/:id endpoint for admin overrides
     item = unwrap(
-      await client.patch(`/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}`, updates),
+      await client.put(`/admin/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}`, payload),
     );
   } catch (err) {
     try {
       item = unwrap(
-        await client.put(`/admin/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}`, updates),
+        await client.patch(`/admin/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}`, payload),
       );
     } catch {
       item = unwrap(
-        await client.patch(`/admin/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}`, updates),
+        await client.patch(`/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}`, payload),
       );
     }
   }

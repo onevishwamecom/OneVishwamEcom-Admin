@@ -29,18 +29,22 @@ export default function BasicListingFields({
           />
         </div>
 
-        {/* Subcategory */}
+        {/* Subcategory / Property Type */}
         <div>
           <label htmlFor={`${idPrefix}-subcategory`} className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-            Subcategory
+            {subcategoryList.includes('Flat') || subcategoryList.includes('Plot') || subcategoryList.includes('Residential') ? 'Property Type' : 'Subcategory'}
           </label>
           <select
             id={`${idPrefix}-subcategory`}
-            value={form.subcategory || ''}
-            onChange={(e) => onChange('subcategory', e.target.value)}
+            value={form.propertyType || form.subcategory || ''}
+            onChange={(e) => {
+              const val = e.target.value;
+              onChange('subcategory', val);
+              onChange('propertyType', val);
+            }}
             className={OVERRIDE_INPUT_CLASS}
           >
-            <option value="">Select Subcategory</option>
+            <option value="">Select {subcategoryList.includes('Flat') || subcategoryList.includes('Plot') || subcategoryList.includes('Residential') ? 'Property Type' : 'Subcategory'}</option>
             {subcategoryList.map((sub) => (
               <option key={sub} value={sub}>
                 {sub}

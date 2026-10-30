@@ -12,6 +12,7 @@ const AdminListings = lazy(() => import('./pages/Admin/AdminListings'));
 const AdminContributors = lazy(() => import('./pages/Admin/AdminContributors'));
 const ContributorProfile = lazy(() => import('./pages/Admin/ContributorProfile'));
 const AdminCategories = lazy(() => import('./pages/Admin/AdminCategories'));
+const AdminAnnouncements = lazy(() => import('./pages/Admin/AdminAnnouncements'));
 const AdminActivity = lazy(() => import('./pages/Admin/AdminActivity'));
 const ListedItems = lazy(() => import('./pages/Admin/ListedItems'));
 const ListingReview = lazy(() => import('./pages/Admin/ListingReview'));
@@ -73,6 +74,7 @@ function App() {
               <Route path="users" element={<AdminUsers />} />
               <Route path="users/:id" element={<CustomerProfile />} />
               <Route path="categories" element={<AdminCategories />} />
+              <Route path="announcements" element={<AdminAnnouncements />} />
               <Route path="activity" element={<AdminActivity />} />
               <Route path="*" element={<AdminNotFound />} />
             </Route>

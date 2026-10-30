@@ -178,7 +178,7 @@ function ListingTable({
 
     subcategory: (item) => (
       <span className="inline-block px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-semibold whitespace-nowrap">
-        {item.subcategory || 'General'}
+        {item.propertyType || item.subcategory || 'General'}
       </span>
     ),
 

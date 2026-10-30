@@ -180,6 +180,7 @@ export default function ListedItems() {
     await adminApi.updateListing(editing._type, editing._id || editing.id, {
       ...form,
       images,
+      status: form.status && form.status !== 'pending' ? form.status : 'approved',
     });
     await reloadListings();
     setEditing(null);

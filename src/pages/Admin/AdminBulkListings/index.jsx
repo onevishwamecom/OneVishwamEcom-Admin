@@ -140,7 +140,10 @@ export default function AdminBulkListings() {
     try {
       if (modalState.item) {
         const itemId = modalState.item._id || modalState.item.itemId;
-        await adminApi.updateBatchItem(modalState.batchId, itemId, formPayload);
+        await adminApi.updateBatchItem(modalState.batchId, itemId, {
+          ...formPayload,
+          status: formPayload.status && formPayload.status !== 'pending' ? formPayload.status : 'approved',
+        });
         Swal.fire({
           icon: 'success',
           title: 'Item Updated',

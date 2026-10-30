@@ -11,7 +11,7 @@ export default function AdminBatchItemModal({ isOpen, onClose, onSave, item, bat
     city: 'Bengaluru',
     area: '',
     description: '',
-    status: 'pending',
+    status: 'approved',
     imagesText: '',
   });
 
@@ -24,7 +24,7 @@ export default function AdminBatchItemModal({ isOpen, onClose, onSave, item, bat
         city: item.city || 'Bengaluru',
         area: item.area || item.location || '',
         description: item.description || '',
-        status: item.status || 'pending',
+        status: item.status && item.status !== 'pending' ? item.status : 'approved',
         imagesText: Array.isArray(item.images) ? item.images.join('\n') : '',
       });
     } else {
@@ -35,7 +35,7 @@ export default function AdminBatchItemModal({ isOpen, onClose, onSave, item, bat
         city: 'Bengaluru',
         area: '',
         description: '',
-        status: 'pending',
+        status: 'approved',
         imagesText: '',
       });
     }
@@ -59,11 +59,18 @@ export default function AdminBatchItemModal({ isOpen, onClose, onSave, item, bat
       .map((s) => s.trim())
       .filter(Boolean);
 
-    onSave({
+    const payload = {
       ...formData,
+      status: formData.status && formData.status !== 'pending' ? formData.status : 'approved',
       category: batchCategory,
       images,
-    });
+    };
+    if (batchCategory === 'properties') {
+      payload.propertyType = formData.propertyType || formData.subcategory;
+      delete payload.subcategory;
+    }
+
+    onSave(payload);
   };
 
   return (
@@ -124,13 +131,13 @@ export default function AdminBatchItemModal({ isOpen, onClose, onSave, item, bat
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">
-                Subcategory / Type
+                {batchCategory === 'properties' ? 'Property Type' : 'Subcategory / Type'}
               </label>
               <input
                 type="text"
-                value={formData.subcategory}
-                onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
-                placeholder="e.g. Flat/Villa or SUV"
+                value={formData.propertyType || formData.subcategory}
+                onChange={(e) => setFormData({ ...formData, subcategory: e.target.value, propertyType: e.target.value })}
+                placeholder={batchCategory === 'properties' ? 'e.g. Flat / Villa, Plot / Land' : 'e.g. SUV, Shirt'}
                 className="w-full text-xs rounded-xl border border-slate-200 px-3.5 py-2.5 outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/10"
               />
             </div>

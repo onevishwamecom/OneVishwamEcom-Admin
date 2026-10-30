@@ -23,7 +23,7 @@ export default function OverrideModal({
 }) {
   const typeKey = listing?._type || category?.id || 'properties';
   const subcategoryList = SUBCATEGORIES[typeKey] || [];
-  const currentSubcategory = overrideForm?.subcategory || listing?.subcategory || '';
+  const currentSubcategory = overrideForm?.propertyType || overrideForm?.subcategory || listing?.propertyType || listing?.subcategory || '';
   const catFields = useMemo(
     () => getCategoryFields(typeKey, currentSubcategory),
     [typeKey, currentSubcategory]
@@ -32,8 +32,19 @@ export default function OverrideModal({
   const [saveLoading, setSaveLoading] = useState(false);
 
   const handleFieldChange = useCallback((key, value) => {
-    setOverrideForm((prev) => ({ ...prev, [key]: value }));
-  }, [setOverrideForm]);
+    setOverrideForm((prev) => {
+      const next = { ...prev, [key]: value };
+      if (key === 'subcategory' && (typeKey === 'properties' || listing?._type === 'properties')) {
+        next.propertyType = value;
+      } else if (key === 'propertyType') {
+        next.propertyType = value;
+        if (typeKey === 'properties' || listing?._type === 'properties') {
+          delete next.subcategory;
+        }
+      }
+      return next;
+    });
+  }, [setOverrideForm, typeKey, listing]);
 
   const onVideoUploaded = useCallback((url) => {
     setOverrideForm((prev) => ({ ...prev, videoUrl: url }));

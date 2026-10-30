@@ -15,11 +15,15 @@ import { auth } from '../firebase/config';
  * ============================================================================
  */
 
+const DEFAULT_API_URL = import.meta.env.DEV
+  ? 'http://localhost:5001/api'
+  : 'https://asia-south1-onevishwam.cloudfunctions.net/api';
+
 const client = axios.create({
   baseURL:
     import.meta.env.VITE_API_BASE_URL ||
     import.meta.env.VITE_API_URL ||
-    'https://asia-south1-onevishwam.cloudfunctions.net/api',
+    DEFAULT_API_URL,
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
   validateStatus: (status) => status >= 200 && status < 300,
