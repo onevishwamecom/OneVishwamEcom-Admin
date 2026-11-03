@@ -361,7 +361,7 @@ async function deploy() {
     firebaseBin,
     ['deploy', `--only=hosting:${CONFIG.target}`, `--project=${CONFIG.projectId}`],
     {
-      cwd: projectRoot,
+      cwd: projectRoot, shell: true,
     }
   );
 
@@ -455,3 +455,4 @@ async function deploy() {
 }
 
 deploy();
+
