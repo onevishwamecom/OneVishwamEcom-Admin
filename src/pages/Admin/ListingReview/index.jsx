@@ -131,7 +131,11 @@ function ListingReview() {
       />
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <ListingInfoCard listing={listing} images={images} category={category} />
+        <ListingInfoCard
+          listing={listing}
+          images={images}
+          category={category}
+        />
         <ContributorInfoCard
           contributor={contributor}
           contributorDetail={contributorDetail}

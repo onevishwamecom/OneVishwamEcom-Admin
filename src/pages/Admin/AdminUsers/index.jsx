@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { DataTable, StatusBadge } from '../../../components/Admin/AdminUi';
 import { PageContainer, PageHeader, PageSection } from '../../../components/layout/PageContainer';
 import useAsyncData from '../../../hooks/useAsyncData';
@@ -6,13 +7,33 @@ import { adminApi } from '../../../api/adminData';
 import { CACHE_TTL } from '../../../services/cache/cacheService';
 import { ErrorState } from '../../../components/skeleton';
 
+import UserStatsCards from './components/UserStatsCards';
+import UserActivityModal from './components/UserActivityModal';
+
 const USER_COLUMNS = [
   { key: 'user', label: 'User Details' },
   { key: 'contact', label: 'Contact Info' },
+  { key: 'interests', label: 'Sector Interests' },
   { key: 'location', label: 'Location' },
   { key: 'lastLogin', label: 'Last Logged In', align: 'center' },
+  { key: 'duration', label: 'Time Spent on Site', align: 'center' },
   { key: 'status', label: 'Account Status', align: 'center' },
+  { key: 'activity', label: 'Browsing Activity', align: 'center' },
 ];
+
+function formatDuration(totalSeconds) {
+  if (!totalSeconds || totalSeconds < 1) return '< 1m';
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  if (minutes > 0) {
+    return `${minutes}m ${seconds}s`;
+  }
+  return `${seconds}s`;
+}
 
 function formatDate(dateStr) {
   if (!dateStr) return 'Never';
@@ -45,6 +66,7 @@ function timeAgo(dateStr) {
 export default function AdminUsers() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedUserForActivity, setSelectedUserForActivity] = useState(null);
 
   const { data: statsData, loading: statsLoading } = useAsyncData(
     () => adminApi.getUserStats(),
@@ -108,71 +130,11 @@ export default function AdminUsers() {
       />
 
       {/* Overview Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-        {/* Stat 1: Total Registered */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-card hover:shadow-card-hover transition-all">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Users</p>
-              <h3 className="text-2xl font-extrabold text-slate-900 mt-1">
-                {statsLoading ? '…' : stats.totalUsers ?? 0}
-              </h3>
-            </div>
-            <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-brand-blue to-brand-blue/70 flex items-center justify-center text-white shadow-sm">
-              <i className="fa-solid fa-users text-lg" aria-hidden="true" />
-            </div>
-          </div>
-          <p className="text-xs text-slate-500 mt-3 font-medium">Registered OneVishwam customer accounts</p>
-        </div>
-
-        {/* Stat 2: Logged In Users */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-card hover:shadow-card-hover transition-all">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Logged In Users</p>
-              <h3 className="text-2xl font-extrabold text-emerald-600 mt-1">
-                {statsLoading ? '…' : stats.loggedInUsers ?? 0}
-              </h3>
-            </div>
-            <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white shadow-sm">
-              <i className="fa-solid fa-user-clock text-lg" aria-hidden="true" />
-            </div>
-          </div>
-          <p className="text-xs text-emerald-700/80 mt-3 font-medium">Users with logged session record</p>
-        </div>
-
-        {/* Stat 3: Active Accounts */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-card hover:shadow-card-hover transition-all">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Active Accounts</p>
-              <h3 className="text-2xl font-extrabold text-brand-blue mt-1">
-                {statsLoading ? '…' : stats.activeUsers ?? 0}
-              </h3>
-            </div>
-            <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-sm">
-              <i className="fa-solid fa-user-shield text-lg" aria-hidden="true" />
-            </div>
-          </div>
-          <p className="text-xs text-slate-500 mt-3 font-medium">Active user profiles in database</p>
-        </div>
-
-        {/* Stat 4: Verified Emails */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-card hover:shadow-card-hover transition-all">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Verified Emails</p>
-              <h3 className="text-2xl font-extrabold text-purple-600 mt-1">
-                {statsLoading ? '…' : stats.emailVerifiedUsers ?? 0}
-              </h3>
-            </div>
-            <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white shadow-sm">
-              <i className="fa-solid fa-envelope-circle-check text-lg" aria-hidden="true" />
-            </div>
-          </div>
-          <p className="text-xs text-slate-500 mt-3 font-medium">Email confirmed customer accounts</p>
-        </div>
-      </div>
+      <UserStatsCards
+        stats={stats}
+        statsLoading={statsLoading}
+        formatDuration={formatDuration}
+      />
 
       {/* Main Table Section */}
       <PageSection>
@@ -235,21 +197,27 @@ export default function AdminUsers() {
             renderRow={(u) => [
               /* User Details */
               <td key="user" className="py-3">
-                <div className="flex items-center gap-3">
+                <Link
+                  to={`/admin/users/${u._id}`}
+                  className="flex items-center gap-3 group/user hover:opacity-90 transition-opacity"
+                  title="View full customer profile and activity"
+                >
                   {u.avatar ? (
                     <img
                       src={u.avatar}
                       alt={u.name}
-                      className="h-10 w-10 rounded-xl object-cover border border-slate-100 shadow-sm shrink-0"
+                      className="h-10 w-10 rounded-xl object-cover border border-slate-100 shadow-sm shrink-0 group-hover/user:ring-2 group-hover/user:ring-brand-blue/30 transition-all"
                     />
                   ) : (
-                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-brand-blue/80 to-indigo-600 flex items-center justify-center text-white font-extrabold text-sm shadow-sm shrink-0">
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-brand-blue/80 to-indigo-600 flex items-center justify-center text-white font-extrabold text-sm shadow-sm shrink-0 group-hover/user:ring-2 group-hover/user:ring-brand-blue/30 transition-all">
                       {u.name.charAt(0).toUpperCase()}
                     </div>
                   )}
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-900 truncate text-sm">{u.name}</span>
+                      <span className="font-bold text-slate-900 truncate text-sm group-hover/user:text-brand-blue transition-colors">
+                        {u.name}
+                      </span>
                       {u.isEmailVerified && (
                         <span title="Email Verified" className="text-emerald-500 text-xs">
                           <i className="fa-solid fa-circle-check" />
@@ -258,7 +226,7 @@ export default function AdminUsers() {
                     </div>
                     <span className="text-[11px] text-slate-400 block font-mono">ID: {u._id}</span>
                   </div>
-                </div>
+                </Link>
               </td>,
 
               /* Contact Info */
@@ -273,6 +241,40 @@ export default function AdminUsers() {
                     <span>{u.phone || '—'}</span>
                   </p>
                 </div>
+              </td>,
+
+              /* Sector Interests */
+              <td key="interests" className="text-xs">
+                {u.interests && u.interests.length > 0 ? (
+                  <div className="flex flex-wrap items-center gap-1.5 max-w-[200px]">
+                    {u.interests.slice(0, 3).map((it) => {
+                      const isPrimary = it.category?.toLowerCase() === (u.primaryInterest || '').toLowerCase();
+                      return (
+                        <span
+                          key={it.category}
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold border capitalize ${
+                            isPrimary
+                              ? 'bg-brand-blue/10 text-brand-blue border-brand-blue/30 shadow-2xs'
+                              : 'bg-slate-100 text-slate-700 border-slate-200'
+                          }`}
+                        >
+                          <span>{it.category}</span>
+                          <span className="text-[10px] opacity-75">({it.viewCount})</span>
+                        </span>
+                      );
+                    })}
+                    {u.interests.length > 3 && (
+                      <span className="text-[10px] text-slate-400 font-semibold">
+                        +{u.interests.length - 3}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-[11px] text-slate-400">
+                    <i className="fa-solid fa-compass text-[10px]" />
+                    <span>General</span>
+                  </span>
+                )}
               </td>,
 
               /* Location */
@@ -307,14 +309,104 @@ export default function AdminUsers() {
                 )}
               </td>,
 
+              /* Time Spent / Duration on Site */
+              <td key="duration" className="text-center whitespace-nowrap">
+                {(() => {
+                  const now = new Date();
+                  const lastActive = u.lastActiveAt ? new Date(u.lastActiveAt) : null;
+                  const isActiveNow = lastActive && !isNaN(lastActive.getTime()) && (now - lastActive) < 3 * 60 * 1000;
+                  const totalSecs = u.totalTimeSpent || u.sessionDuration || 0;
+
+                  if (isActiveNow) {
+                    return (
+                      <div className="inline-flex flex-col items-center">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-extrabold border border-emerald-300 shadow-2xs">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                          <span>Active Now</span>
+                        </span>
+                        <span className="text-[10px] text-emerald-600 font-semibold mt-0.5">
+                          {formatDuration(totalSecs)} total
+                        </span>
+                      </div>
+                    );
+                  }
+
+                  if (totalSecs > 0) {
+                    return (
+                      <div className="inline-flex flex-col items-center">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-brand-blue text-xs font-bold border border-blue-200">
+                          <i className="fa-solid fa-hourglass-half text-[10px] text-brand-blue" />
+                          <span>{formatDuration(totalSecs)}</span>
+                        </span>
+                        {u.sessionDuration > 0 && u.sessionDuration !== totalSecs && (
+                          <span className="text-[10px] text-slate-400 mt-0.5">
+                            Last session: {formatDuration(u.sessionDuration)}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  if (u.lastLogin) {
+                    return (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-50 text-slate-600 text-xs font-medium border border-slate-200">
+                        <i className="fa-regular fa-clock text-[10px] text-slate-400" />
+                        <span>~1m</span>
+                      </span>
+                    );
+                  }
+
+                  return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 text-slate-400 text-xs font-medium">
+                      —
+                    </span>
+                  );
+                })()}
+              </td>,
+
               /* Account Status */
               <td key="status" className="text-center whitespace-nowrap">
                 <StatusBadge status={u.status || 'active'} />
+              </td>,
+
+              /* Activity Details Action */
+              <td key="activity" className="text-center whitespace-nowrap">
+                <div className="inline-flex items-center gap-1.5">
+                  <Link
+                    to={`/admin/users/${u._id}`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-blue hover:bg-blue-700 text-white font-bold text-xs transition-all shadow-2xs hover:shadow-sm"
+                    title="Open full customer details & interest analytics page"
+                  >
+                    <i className="fa-solid fa-user text-[10px]" />
+                    <span>Profile</span>
+                    <i className="fa-solid fa-arrow-right text-[9px] opacity-75" />
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedUserForActivity(u)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all cursor-pointer"
+                    title="Quick preview activity modal"
+                  >
+                    <i className="fa-solid fa-chart-pie text-[11px] text-slate-500" />
+                    {u.browsingHistory && u.browsingHistory.length > 0 && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    )}
+                  </button>
+                </div>
               </td>,
             ]}
           />
         )}
       </PageSection>
+
+      {/* User Interests & Activity History Modal */}
+      {selectedUserForActivity && (
+        <UserActivityModal
+          user={selectedUserForActivity}
+          onClose={() => setSelectedUserForActivity(null)}
+        />
+      )}
     </PageContainer>
   );
 }

@@ -10,6 +10,7 @@ import { adminApi } from '../../../api/adminData';
 import { CACHE_TTL } from '../../../services/cache/cacheService';
 import { Skeleton, SkeletonTable, ErrorState } from '../../../components/skeleton';
 import EditListingModal from './components/EditListingModal';
+import { ListingTable, Button } from '../../../components/ui';
 
 function ListedItemsSkeleton() {
   return (
@@ -179,6 +180,7 @@ export default function ListedItems() {
     await adminApi.updateListing(editing._type, editing._id || editing.id, {
       ...form,
       images,
+      status: form.status && form.status !== 'pending' ? form.status : 'approved',
     });
     await reloadListings();
     setEditing(null);
@@ -240,129 +242,31 @@ export default function ListedItems() {
         />
       ) : (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-card overflow-hidden">
-          <div className="overflow-x-auto touch-pan-y w-full max-w-full">
-            <table className="w-full text-left text-xs sm:text-sm border-collapse">
-              <thead>
-                <tr className="text-xs uppercase tracking-wider text-slate-400 border-b-2 border-slate-100">
-                  <th className="px-2 py-2 font-semibold text-[11px] whitespace-nowrap w-8 bg-slate-50 text-center text-slate-400">
-                    #
-                  </th>
-                  <th className="px-2.5 sm:px-3 py-2 font-semibold text-[11px] uppercase tracking-wider text-slate-400 whitespace-nowrap bg-slate-50">Product</th>
-                  <th className="px-2.5 sm:px-3 py-2 font-semibold text-[11px] uppercase tracking-wider text-slate-400 whitespace-nowrap bg-slate-50 w-px">Category</th>
-                  <th className="px-2.5 sm:px-3 py-2 font-semibold text-[11px] uppercase tracking-wider text-slate-400 whitespace-nowrap bg-slate-50">Price</th>
-                  <th className="px-2.5 sm:px-3 py-2 font-semibold text-[11px] uppercase tracking-wider text-slate-400 whitespace-nowrap bg-slate-50">Location</th>
-                  <th className="px-2.5 sm:px-3 py-2 font-semibold text-[11px] uppercase tracking-wider text-slate-400 whitespace-nowrap bg-slate-50">Date</th>
-                  <th className="px-2.5 sm:px-3 py-2 font-semibold text-[11px] uppercase tracking-wider text-slate-400 whitespace-nowrap bg-slate-50 text-right w-px">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pageItems.map((l, ri) => {
-                  const cat = categories.find((c) => c.id === l._type);
-                  const isEvenRow = ri % 2 === 1;
-                  return (
-                    <tr
-                      key={l._id || l.id}
-                      className={`border-b border-slate-100 last:border-0 transition-colors h-12 max-h-12 ${
-                        isEvenRow ? 'bg-slate-50/60' : 'bg-white'
-                      }`}
-                    >
-                      <td className="px-2 py-2 text-center text-[11px] font-bold text-slate-300 select-none tabular-nums bg-slate-50 align-middle">
-                        {(effectivePage - 1) * rowsPerPage + ri + 1}
-                      </td>
-
-                      {/* Product */}
-                      <td className="px-2.5 sm:px-3 py-1.5 max-w-[190px] overflow-hidden align-middle">
-                        <Link
-                          to={`/admin/listings/${l._type}/${l._id || l.id}`}
-                          state={{
-                            fromPage: effectivePage,
-                            fromPath: `${location.pathname}${location.search}`,
-                          }}
-                          onClick={() => {
-                            try {
-                              sessionStorage.setItem('admin_listings_page', String(effectivePage));
-                            } catch (e) {}
-                          }}
-                          className="group flex items-center gap-2 min-w-0"
-                          title={l.title}
-                        >
-                          <div className="h-8 w-8 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
-                            {l.images && l.images.length > 0 && l.images[0] ? (
-                              <img
-                                src={l.images[0]}
-                                alt={l.title}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-slate-300">
-                                <i className={`fa-solid ${cat?.icon || 'fa-box-open'} text-xs`} aria-hidden="true" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <p
-                              onMouseEnter={(e) => handleHoverItem(l.title, e.currentTarget)}
-                              onMouseLeave={() => handleHoverItem(null)}
-                              className="font-semibold text-xs text-slate-800 group-hover:text-brand-blue transition-colors truncate max-w-[140px] sm:max-w-[170px] cursor-pointer"
-                            >
-                              {l.title}
-                            </p>
-                            <p className="text-[10px] text-slate-400 font-normal truncate max-w-[140px]">
-                              {l._id || l.id}
-                            </p>
-                          </div>
-                        </Link>
-                      </td>
-
-                      {/* Category */}
-                      <td className="px-2.5 sm:px-3 py-1.5 w-px whitespace-nowrap align-middle">
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600">
-                          <i className={`fa-solid ${cat?.icon || 'fa-box-open'} text-brand-blue text-[9px]`} aria-hidden="true" />
-                          {cat?.label || l._type}
-                        </span>
-                      </td>
-
-                      {/* Price */}
-                      <td className="px-2.5 sm:px-3 py-1.5 font-bold text-slate-800 whitespace-nowrap text-xs align-middle">
-                        {formatINR(l.price, { compact: true }) || '—'}
-                      </td>
-
-                      {/* Location */}
-                      <td className="px-2.5 sm:px-3 py-1.5 text-slate-600 max-w-[110px] truncate text-xs align-middle">
-                        <span
-                          onMouseEnter={(e) => handleHoverItem(l.location || l.area || l.city, e.currentTarget)}
-                          onMouseLeave={() => handleHoverItem(null)}
-                          className="truncate block max-w-[110px] cursor-pointer hover:text-slate-900 transition-colors"
-                        >
-                          {l.location || l.area || l.city || '—'}
-                        </span>
-                      </td>
-
-                      {/* Date */}
-                      <td className="px-2.5 sm:px-3 py-1.5 text-slate-400 text-xs whitespace-nowrap align-middle">
-                        {formatDate(l.createdAt)}
-                      </td>
-
-                      {/* Action */}
-                      <td className="px-2.5 sm:px-3 py-1.5 text-right w-px whitespace-nowrap align-middle">
-                        <button
-                          onClick={() => handleDelete(l)}
-                          className="inline-flex items-center justify-center h-7 w-7 rounded-lg border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
-                          aria-label={`Delete ${l.title}`}
-                          title="Delete listing"
-                        >
-                          <i className="fa-solid fa-trash-can text-[10px]" aria-hidden="true" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <ListingTable
+            items={pageItems}
+            columns={['index', 'product', 'category', 'price', 'location', 'date', 'actions']}
+            portal="admin"
+            getItemLink={(l) => `/admin/listings/${l._type}/${l._id || l.id}`}
+            onDelete={handleDelete}
+            responsiveMode="scroll"
+            currentPage={effectivePage}
+            perPage={rowsPerPage}
+            renderCustomActions={(l) => (
+              <Button
+                to={`/admin/listings/${l._type}/${l._id || l.id}`}
+                state={{
+                  fromPage: effectivePage,
+                  fromPath: `${location.pathname}${location.search}`,
+                }}
+                variant="secondary"
+                size="xs"
+                icon="fa-eye"
+                title="View Details"
+              >
+                View
+              </Button>
+            )}
+          />
 
           {/* Pagination footer */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-4 border-t border-slate-100/60">

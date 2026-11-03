@@ -12,19 +12,36 @@ function dedupe(key, fn) {
 }
 
 export function listingType(category) {
+  if (!category) return '';
+  const normalized = String(category).trim().toLowerCase();
   const map = {
     'real-estate': 'properties',
+    property: 'properties',
+    properties: 'properties',
     vehicle: 'vehicles',
+    vehicles: 'vehicles',
+    automobile: 'vehicles',
+    automobiles: 'vehicles',
     grocery: 'groceries',
+    groceries: 'groceries',
     garment: 'garments',
+    garments: 'garments',
     jewellery: 'jewellery',
+    jewelry: 'jewellery',
     finance: 'finance',
+    service: 'services',
+    services: 'services',
+    electronic: 'consumer-electronics',
+    electronics: 'consumer-electronics',
+    'consumer-electronics': 'consumer-electronics',
+    bedding: 'bedding-comfort',
+    'bedding-comfort': 'bedding-comfort',
   };
-  return map[category] || 'properties';
+  return map[normalized] || normalized;
 }
 
 function normalizeListing(item) {
-  const type = item._type || listingType(item.category);
+  const type = item._type || listingType(item.category) || 'properties';
   return { ...item, _type: type };
 }
 
@@ -45,31 +62,140 @@ function flattenResults(data) {
 }
 
 async function getStats() {
-  return dedupe('stats', () => client.get('/admin/listings/stats').then(unwrap));
+  return dedupe('stats', async () => {
+    const raw = await client.get('/admin/listings/stats').then(unwrap).catch(() => null);
+    const data = raw || {};
+    const total = Number(data.totalListings ?? data.total ?? 0);
+    const pending = Number(data.pendingListings ?? data.pending ?? 0);
+    const approved = Number(data.approvedListings ?? data.approved ?? 0);
+    const cancelled = Number(data.cancelledListings ?? data.cancelled ?? 0);
+    const changesRequired = Number(data.changesRequiredListings ?? data['changes-required'] ?? 0);
+
+    return {
+      ...data,
+      total,
+      totalListings: total,
+      pending,
+      pendingListings: pending,
+      approved,
+      approvedListings: approved,
+      cancelled,
+      cancelledListings: cancelled,
+      'changes-required': changesRequired,
+      changesRequiredListings: changesRequired,
+      userStats: data.userStats || {
+        totalUsers: 0,
+        loggedInUsers: 0,
+        activeUsers: 0,
+        emailVerifiedUsers: 0,
+      },
+      visitorStats: data.visitorStats || null,
+    };
+  });
+}
+
+async function getVisitorStats() {
+  return dedupe('visitorStats', () =>
+    client
+      .get('/visitors/count')
+      .then(unwrap)
+      .catch(() => null)
+  );
 }
 
 async function getContributors() {
   return dedupe('contributors', () =>
-    client.get('/admin/contributors').then(unwrap).then((data) => data?.contributors || []),
+    client.get('/admin/contributors').then(unwrap).then((data) => {
+      const list = data?.contributors || [];
+      const seen = new Set();
+      const unique = [];
+      for (const c of list) {
+        const key = (c.email || c.name || String(c._id || c.id || '')).trim().toLowerCase();
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        unique.push(c);
+      }
+      return unique;
+    }),
   );
 }
 
 async function getContributorDetail(id) {
+  if (!id) return null;
   return dedupe(`contributor:${id}`, async () => {
-    const data = unwrap(await client.get(`/admin/contributors/${encodeURIComponent(id)}`));
-    if (!data) return null;
+    let data = null;
+    try {
+      data = unwrap(await client.get(`/admin/contributors/${encodeURIComponent(id)}`));
+    } catch {}
+
     const items = [];
-    if (data.listings) {
+    if (data?.listings) {
       for (const [type, arr] of Object.entries(data.listings)) {
         if (Array.isArray(arr)) {
           arr.forEach((item) => items.push({ ...item, _type: type }));
         }
       }
     }
+
+    // Resilient fallback if endpoint returned 0 items or needs contributor info
+    let contributorObj = data?.contributor;
+    if (!contributorObj || !contributorObj.name) {
+      try {
+        const allContribs = await getContributors();
+        const found = allContribs.find(
+          (c) => String(c._id || c.id) === String(id) || (c.email && c.email.toLowerCase() === String(id).toLowerCase())
+        );
+        if (found) {
+          contributorObj = { ...found, ...(contributorObj || {}) };
+        }
+      } catch {}
+    }
+    contributorObj = contributorObj || {};
+
+    if (items.length === 0) {
+      try {
+        const allListings = await getListings();
+        const targetId = String(id || '');
+        const contributorEmail = (contributorObj?.email || (targetId.includes('@') ? targetId : '')).toLowerCase();
+
+        const matched = allListings.filter((l) => {
+          const listerId = String(l.lister?._id || l.listerId || l.createdBy || l.contributorId || '');
+          const listerEmail = (l.lister?.email || l.contributor?.email || l.contactEmail || '').toLowerCase();
+          const contributorId = String(l.contributor?._id || l.contributor?.id || '');
+
+          return (
+            (targetId && (listerId === targetId || contributorId === targetId)) ||
+            (contributorObj?._id && (listerId === String(contributorObj._id) || contributorId === String(contributorObj._id))) ||
+            (contributorEmail && (listerEmail === contributorEmail || (l.contactEmail && l.contactEmail.toLowerCase() === contributorEmail)))
+          );
+        });
+
+        if (matched.length > 0) {
+          items.push(...matched);
+        }
+      } catch {}
+    }
+
+    const phone = contributorObj.phone || contributorObj.contact || (items[0]?.contributor?.contact || items[0]?.contributor?.phone || items[0]?.contact || '');
+    const email = contributorObj.email || (items[0]?.contributor?.email || (id.includes('@') ? id : ''));
+    const name = contributorObj.name || (items[0]?.contributor?.name || items[0]?.lister?.name) || 'Contributor';
+
     return {
-      ...data.contributor,
-      totalListings: data.totalListings || items.length,
+      ...contributorObj,
+      _id: contributorObj._id || id,
+      id: contributorObj._id || id,
+      name,
+      phone,
+      contact: phone,
+      email,
+      totalListings: items.length || data?.totalListings || 0,
       items,
+      stats: {
+        totalListings: items.length,
+        approvedListings: items.filter((i) => i.status === 'approved').length,
+        pendingListings: items.filter((i) => i.status === 'pending').length,
+        cancelledListings: items.filter((i) => i.status === 'cancelled').length,
+      },
     };
   });
 }
@@ -95,15 +221,16 @@ async function getCategories() {
   const stats = await getStats();
   const byType = stats?.byCategory || {};
   return CATEGORIES.map((category) => {
-    const catStats = byType[category.id] || byType[listingType(category.id)] || {};
+    const canonical = listingType(category.id);
+    const catStats = byType[category.id] || (canonical && canonical !== category.id ? byType[canonical] : null) || {};
     return {
       id: category.id,
       ...category,
-      total: catStats.total || 0,
-      pending: catStats.pending || 0,
-      approved: catStats.approved || 0,
-      changesRequired: catStats['changes-required'] || 0,
-      cancelled: catStats.cancelled || 0,
+      total: Number(catStats.total || 0),
+      pending: Number(catStats.pending || 0),
+      approved: Number(catStats.approved || 0),
+      changesRequired: Number(catStats['changes-required'] || 0),
+      cancelled: Number(catStats.cancelled || 0),
     };
   });
 }
@@ -144,6 +271,9 @@ function invalidateDataCaches() {
   // Clear in-flight promises to prevent stale data on immediate refetch
   clearInflight();
   inFlight.clear();
+  try {
+    localStorage.setItem('admin_listings_updated', String(Date.now()));
+  } catch (e) {}
 }
 
 async function approveListing(type, id) {
@@ -171,12 +301,37 @@ async function cancelListing(type, id, reason) {
 }
 
 async function updateListing(type, id, updates) {
-  if (updates.status === 'approved') return approveListing(type, id);
-  if (updates.status === 'changes-required') return requestChanges(type, id, updates.reason);
-  if (updates.status === 'cancelled' || updates.status === 'rejected') return cancelListing(type, id, updates.reason);
-  const item = unwrap(
-    await client.put(`/admin/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}`, updates),
-  );
+  let item = null;
+  const payload = {
+    ...updates,
+    status: updates.status && updates.status !== 'pending' ? updates.status : 'approved',
+  };
+  try {
+    // Primary /admin/listings/:type/:id endpoint for admin overrides
+    item = unwrap(
+      await client.put(`/admin/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}`, payload),
+    );
+  } catch (err) {
+    try {
+      item = unwrap(
+        await client.patch(`/admin/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}`, payload),
+      );
+    } catch {
+      item = unwrap(
+        await client.patch(`/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}`, payload),
+      );
+    }
+  }
+  invalidateDataCaches();
+  return item?.item ? normalizeListing(item.item) : null;
+}
+
+async function reorderListingImages(type, id, images) {
+  const payload = Array.isArray(images) ? { images } : images;
+  const url = type
+    ? `/admin/listings/${encodeURIComponent(type)}/${encodeURIComponent(id)}/images/reorder`
+    : `/admin/products/${encodeURIComponent(id)}/images/reorder`;
+  const item = unwrap(await client.patch(url, payload));
   invalidateDataCaches();
   return item?.item ? normalizeListing(item.item) : null;
 }
@@ -205,22 +360,67 @@ async function getUsers(params = {}) {
   return dedupe(key, () => client.get(`/admin/users?${query}`).then(unwrap));
 }
 
+async function getUserActivity(id) {
+  if (!id) return null;
+  return dedupe(`userActivity:${id}`, () =>
+    client.get(`/admin/users/${encodeURIComponent(id)}/activity`).then(unwrap)
+  );
+}
+
+async function getBulkBatches(params = {}) {
+  return client.get('/bulk-listing/batches', { params }).then(unwrap);
+}
+
+async function getBulkBatchById(batchId) {
+  return client.get(`/bulk-listing/batches/${encodeURIComponent(batchId)}`).then(unwrap);
+}
+
+async function getTemplateDownloadLogs(params = {}) {
+  return client.get('/bulk-listing/download-logs', { params }).then(unwrap);
+}
+
+async function deleteBatch(batchId) {
+  return client.delete(`/bulk-listing/batches/${encodeURIComponent(batchId)}`).then(unwrap);
+}
+
+async function deleteBatchItem(batchId, itemId) {
+  return client.delete(`/bulk-listing/batches/${encodeURIComponent(batchId)}/items/${encodeURIComponent(itemId)}`).then(unwrap);
+}
+
+async function updateBatchItem(batchId, itemId, data) {
+  return client.put(`/bulk-listing/batches/${encodeURIComponent(batchId)}/items/${encodeURIComponent(itemId)}`, data).then(unwrap);
+}
+
+async function addItemToBatch(batchId, data) {
+  return client.post(`/bulk-listing/batches/${encodeURIComponent(batchId)}/items`, data).then(unwrap);
+}
+
 export const adminApi = {
   getStats,
+  getVisitorStats,
   getContributors,
   getContributorDetail,
   getListings,
   getListing,
   getUserStats,
   getUsers,
+  getUserActivity,
   approveListing,
   requestChanges,
   cancelListing,
   updateListing,
+  reorderListingImages,
   updateAvailabilityStatus,
   deleteListing,
   getCategories,
   getActivity,
+  getBulkBatches,
+  getBulkBatchById,
+  getTemplateDownloadLogs,
+  deleteBatch,
+  deleteBatchItem,
+  updateBatchItem,
+  addItemToBatch,
 };
 
 export default adminApi;

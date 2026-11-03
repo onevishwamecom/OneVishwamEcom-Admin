@@ -1,4 +1,5 @@
 import React from 'react';
+import LottieFeedbackAnimation from '../ui/LottieFeedbackAnimation';
 
 const STATUS_CONFIG = {
   pending: {
@@ -91,15 +92,29 @@ export function StatusBadge({ status, className = '' }) {
   );
 }
 
-export function EmptyState({ icon = 'fa-inbox', title, message, action }) {
+export function EmptyState({
+  icon = 'fa-inbox',
+  title,
+  message,
+  action,
+  animationType = 'emptyCatalog',
+  showAnimation = true,
+  className = '',
+}) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 bg-white rounded-3xl border border-slate-100 shadow-sm text-center px-4">
-      <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-brand-blue/10 to-brand-blue/5 flex items-center justify-center mb-5">
-        <i className={`fa-solid ${icon} text-3xl text-brand-blue/60`} aria-hidden="true" />
-      </div>
-      <h3 className="text-lg font-bold text-slate-900 mb-1">{title}</h3>
-      {message && <p className="text-sm font-medium text-slate-500 max-w-sm">{message}</p>}
-      {action && <div className="mt-6">{action}</div>}
+    <div className={`flex flex-col items-center justify-center py-12 bg-white rounded-3xl border border-slate-100 shadow-xs text-center px-4 animate-fade-in ${className}`}>
+      {showAnimation ? (
+        <div className="mb-2">
+          <LottieFeedbackAnimation type={animationType} size="md" fallbackIcon={`fa-solid ${icon}`} />
+        </div>
+      ) : (
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-blue/10 to-brand-blue/5 flex items-center justify-center mb-4">
+          <i className={`fa-solid ${icon} text-2xl text-brand-blue/60`} aria-hidden="true" />
+        </div>
+      )}
+      <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-1">{title}</h3>
+      {message && <p className="text-xs sm:text-sm font-medium text-slate-500 max-w-sm">{message}</p>}
+      {action && <div className="mt-5">{action}</div>}
     </div>
   );
 }
@@ -234,6 +249,7 @@ export function DataTable({
   emptyIcon = 'fa-inbox',
   emptyTitle = 'No data',
   emptyMessage = '',
+  emptyAnimationType = 'emptyCatalog',
   className = '',
   page: controlledPage,
   rowsPerPage = 10,
@@ -288,7 +304,7 @@ export function DataTable({
             {totalRows === 0 ? (
               <tr>
                 <td colSpan={totalCols} className="p-0">
-                  <EmptyState icon={emptyIcon} title={emptyTitle} message={emptyMessage} />
+                  <EmptyState icon={emptyIcon} title={emptyTitle} message={emptyMessage} animationType={emptyAnimationType} />
                 </td>
               </tr>
             ) : (
@@ -301,26 +317,31 @@ export function DataTable({
                   <tr
                     key={row._id || row.id || ri}
                     className={[
-                      'border-b border-slate-100 last:border-0 transition-colors cursor-default group h-11 max-h-11',
+                      'border-b border-slate-100 last:border-0 transition-colors cursor-default group hover:bg-slate-50/50',
                       rowBg,
                     ].join(' ')}
                   >
-                    <td className="px-2 py-2 text-center text-[11px] font-bold text-slate-300 select-none tabular-nums bg-slate-50">
+                    <td className="px-2 py-3 text-center text-[11px] font-bold text-slate-300 select-none tabular-nums bg-slate-50">
                       {startIndex + ri + 1}
                     </td>
                     {cells.map((cell, ci) => {
-                      const cellProps = cell?.props || {};
-                      const { className: cellClass = '', children: cellChildren, ...restCellProps } = cellProps;
+                      if (React.isValidElement(cell) && cell.type === 'td') {
+                        const { className: cellClass = '', ...restProps } = cell.props || {};
+                        return React.cloneElement(cell, {
+                          key: cell.key ?? ci,
+                          ...restProps,
+                          className: [
+                            'px-2.5 sm:px-3 py-2.5 text-xs align-middle',
+                            cellClass,
+                          ].join(' '),
+                        });
+                      }
                       return (
                         <td
                           key={cell?.key ?? ci}
-                          {...restCellProps}
-                          className={[
-                            'px-2 sm:px-2.5 py-1.5 text-xs align-middle whitespace-nowrap overflow-hidden',
-                            cellClass,
-                          ].join(' ')}
+                          className="px-2.5 sm:px-3 py-2.5 text-xs align-middle text-slate-700"
                         >
-                          {cellChildren !== undefined ? cellChildren : cell}
+                          {cell}
                         </td>
                       );
                     })}
