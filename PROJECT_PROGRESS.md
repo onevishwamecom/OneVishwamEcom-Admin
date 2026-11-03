@@ -62,7 +62,7 @@
 
 ---
 
-### Week 4 (May 19 — May 25) — Module 2: Real Estate (Properties)
+### Week 4 (May 19 — May 25) — Module 2: Properties
 
 | Day         | Backend                                            | Frontend | Dashboard                      |
 | ----------- | -------------------------------------------------- | -------- | ------------------------------ |
@@ -258,7 +258,7 @@
 ```
 Week 1-2  : 📄 Static site (all pages as HTML/Tailwind mockups)
 Week 3    : 🔌 Module 1 — User Auth        (login/register/JWT)
-Week 4    : 🔌 Module 2 — Real Estate      (properties CRUD + search)
+Week 4    : 🔌 Module 2 — Properties       (properties CRUD + search)
 Week 5    : 🔌 Module 3 — Vehicles         (vehicles CRUD + filters)
 Week 6    : 🔌 Module 4 — Groceries + Garments (both CRUD)
 Week 7    : 🔌 Module 5 — Jewellery        (CRUD + purity/weight filters)

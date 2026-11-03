@@ -1,505 +1,422 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-  DragOverlay,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  rectSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import client from '../../api/client';
-import { uploadMediaToStorage, deleteMediaFromStorage } from '../../services/storageService';
+import React, { useRef, useState, useMemo } from 'react';
+import { DragDropProvider } from '@dnd-kit/react';
+import { useSortable, isSortable } from '@dnd-kit/react/sortable';
 
-const MAX_VIDEO_SIZE = 10 * 1024 * 1024;
-const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo'];
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
-
-function SortableMediaItem({
+function DndSortablePhotoItem({
   id,
-  media,
-  index,
+  idx,
+  item,
   isFirst,
-  onRemove,
-  onMakePrimary,
+  photosLength,
+  onRemovePhoto,
+  onMovePhoto,
+  disabled,
 }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id });
+  const { ref, isDragging, isDropTarget } = useSortable({ id, index: idx, disabled });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 50 : 1,
-  };
+  const isObject = typeof item === 'object' && item !== null && !(item instanceof File);
+  const isVideo = isObject && (item.type === 'video' || item.url?.includes('.mp4') || item.url?.includes('.webm'));
+  const url = typeof item === 'string'
+    ? item
+    : item instanceof File
+    ? URL.createObjectURL(item)
+    : item?.url || item?.preview;
 
-  const isVideo = media.type === 'video';
-  const isPreview = media.preview !== undefined;
+  const isLink = Boolean(
+    isObject
+      ? item.isDirectLink || (!item.file && url && !url.startsWith('blob:') && !url.includes('firebasestorage'))
+      : typeof item === 'string' && !item.includes('firebasestorage') && !item.startsWith('blob:')
+  );
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
-      className="relative group touch-none"
+      ref={ref}
+      className={`relative group aspect-square rounded-2xl overflow-hidden bg-slate-50 border-2 transition-all cursor-grab active:cursor-grabbing select-none shadow-2xs ${
+        isDragging
+          ? 'opacity-40 border-dashed border-brand-blue scale-95 shadow-lg'
+          : isDropTarget
+          ? 'border-brand-blue ring-2 ring-brand-blue/30 scale-102'
+          : isFirst
+          ? 'border-amber-400 ring-2 ring-amber-400/20'
+          : 'border-slate-200 hover:border-slate-300'
+      }`}
     >
-      <div className="aspect-square rounded-2xl overflow-hidden bg-slate-100 border-2 border-slate-200 cursor-grab active:cursor-grabbing relative touch-none">
-        {isVideo ? (
-          <>
-            <video
-              src={media.url || media.preview}
-              className="w-full h-full object-cover pointer-events-none select-none"
-              draggable={false}
-              muted
-              playsInline
-              onError={(e) => { e.currentTarget.style.display = 'none'; }}
-            />
-            <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-none">
-              <i className="fa-solid fa-play text-3xl text-white" />
-            </div>
-            <span className="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded pointer-events-none">
-              VIDEO
-            </span>
-          </>
-        ) : (
-          <img
-            src={media.url || media.preview}
-            alt={`media-${index}`}
-            className="w-full h-full object-cover pointer-events-none select-none"
-            draggable={false}
-            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-          />
-        )}
-        {isFirst && (
-          <span className="absolute top-2 left-2 bg-yellow-400 text-slate-900 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 pointer-events-none">
-            <i className="fa-solid fa-star text-[8px]" />
-            Main
-          </span>
-        )}
-        {isPreview && (
-          <span className="absolute top-2 right-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full pointer-events-none">
-            Preview
-          </span>
-        )}
-      </div>
+      {isVideo ? (
+        <video
+          src={url}
+          className="w-full h-full object-cover pointer-events-none"
+          muted
+          playsInline
+          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+        />
+      ) : (
+        <img
+          src={url}
+          alt={`Media ${idx + 1}`}
+          className="w-full h-full object-cover pointer-events-none select-none"
+          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+        />
+      )}
 
-      <div className="absolute top-1 right-1 z-30 flex gap-1 pointer-events-auto">
-        {!isFirst && (
-          <button
-            type="button"
-            onClick={onMakePrimary}
-            className="w-7 h-7 rounded-full bg-white/90 text-slate-600 hover:bg-yellow-400 hover:text-white shadow-md flex items-center justify-center transition-all text-[11px]"
-            aria-label="Make primary"
-          >
-            <i className="fa-solid fa-arrow-up" />
-          </button>
-        )}
+      {/* Top-Right Remove Button */}
+      {!disabled && (
         <button
           type="button"
           onPointerDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
-            e.preventDefault();
-            onRemove(id);
+            onRemovePhoto?.(idx);
           }}
-          className="w-7 h-7 rounded-full bg-red-500 text-white shadow-md flex items-center justify-center hover:bg-red-600 transition-all text-[11px] cursor-pointer active:scale-95"
-          aria-label="Remove media"
+          className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-red-600/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[10px] shadow-sm cursor-pointer z-20 hover:bg-red-700 active:scale-95"
+          title="Remove Photo"
         >
-          <i className="fa-solid fa-trash" />
+          <i className="fa-solid fa-xmark" />
         </button>
-      </div>
+      )}
 
-      <div
-        {...attributes}
-        {...listeners}
-        className="absolute inset-0 z-10 touch-none"
-        aria-label={`Drag to reorder ${isVideo ? 'video' : 'image'} ${index + 1}`}
-      />
-    </div>
-  );
-}
-
-function SortableMediaOverlay({ media, index, isFirst, isVideo }) {
-  const style = {
-    transform: CSS.Transform.toString(media.transform),
-    transition: media.transition,
-    zIndex: 50,
-  };
-
-  return (
-    <div
-      style={style}
-      className="relative touch-none"
-    >
-      <div className="aspect-square rounded-2xl overflow-hidden bg-slate-100 border-2 border-brand-blue/50 shadow-xl opacity-80 touch-none">
-        {isVideo ? (
-          <>
-            <video
-              src={media.url || media.preview}
-              className="w-full h-full object-cover pointer-events-none select-none"
-              draggable={false}
-              muted
-              playsInline
-            />
-            <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-none">
-              <i className="fa-solid fa-play text-3xl text-white" />
-            </div>
-            <span className="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded pointer-events-none">
-              VIDEO
-            </span>
-          </>
-        ) : (
-          <img
-            src={media.url || media.preview}
-            alt={`media-${index}`}
-            className="w-full h-full object-cover pointer-events-none select-none"
-            draggable={false}
-          />
-        )}
-        {isFirst && (
-          <span className="absolute top-2 left-2 bg-yellow-400 text-slate-900 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 pointer-events-none">
+      {/* Sequence Badge */}
+      <div className="absolute top-1.5 left-1.5 z-10 pointer-events-none flex flex-col gap-1 items-start">
+        {isFirst ? (
+          <span className="bg-amber-400 text-slate-900 text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
             <i className="fa-solid fa-star text-[8px]" />
-            Main
+            <span>1st · Cover</span>
+          </span>
+        ) : (
+          <span className="bg-slate-900/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs">
+            {idx + 1}{idx === 1 ? 'nd' : idx === 2 ? 'rd' : 'th'}
+          </span>
+        )}
+
+        {isLink && (
+          <span className="bg-indigo-600/90 text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow-2xs flex items-center gap-1">
+            <i className="fa-solid fa-link text-[7px]" /> Link
           </span>
         )}
       </div>
+
+      {/* Hover Swap & Reorder Overlay */}
+      {!disabled && (
+        <div
+          onPointerDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-20 flex items-center justify-between pointer-events-auto"
+        >
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              disabled={idx === 0}
+              onPointerDown={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                onMovePhoto?.(idx, idx - 1);
+              }}
+              title="Move Left / Forward"
+              className="w-5 h-5 rounded bg-white/90 text-slate-700 hover:bg-white hover:text-brand-blue flex items-center justify-center text-[9px] shadow-sm disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-transform active:scale-90"
+            >
+              <i className="fa-solid fa-arrow-left" />
+            </button>
+            <button
+              type="button"
+              disabled={idx === photosLength - 1}
+              onPointerDown={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                onMovePhoto?.(idx, idx + 1);
+              }}
+              title="Move Right / Backward"
+              className="w-5 h-5 rounded bg-white/90 text-slate-700 hover:bg-white hover:text-brand-blue flex items-center justify-center text-[9px] shadow-sm disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-transform active:scale-90"
+            >
+              <i className="fa-solid fa-arrow-right" />
+            </button>
+          </div>
+
+          {!isFirst && (
+            <button
+              type="button"
+              onPointerDown={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                onMovePhoto?.(idx, 0);
+              }}
+              title="Set as 1st (Primary Cover)"
+              className="px-1.5 py-0.5 rounded bg-amber-400 hover:bg-amber-300 text-slate-900 text-[8px] font-extrabold flex items-center gap-1 shadow-sm cursor-pointer transition-transform active:scale-95"
+            >
+              <i className="fa-solid fa-star text-[7px]" />
+              <span>Cover</span>
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
+/**
+ * Modern SortableMediaList replicated from Vishwam-Listings MediaUploadSection.
+ * Eliminates jump-to-last bugs, uses direct state callbacks with @dnd-kit/react,
+ * and includes sleek hover overlay swap buttons, direct link input, and dropzone.
+ */
 export default function SortableMediaList({
+  photos = [],
   media = [],
+  images = [],
+  onMovePhoto,
+  onRemovePhoto,
+  onAddPhoto,
+  onAddPhotoUrl,
   onMediaChange,
-  onUploadProgress,
-  maxMedia = 6,
-  accept = 'image/*,video/*',
+  pendingUploads = 0,
+  maxPhotos = 5,
   disabled = false,
-  showMainBadge = true,
   className = '',
+  idPrefix = 'media',
 }) {
-  const [items, setItems] = useState(() => media.map((m, i) => ({
-    id: m.id || `media-${i}-${Date.now()}`,
-    type: m.type || (m.url?.startsWith('video') || m.preview?.startsWith('blob:video') ? 'video' : 'image'),
-    url: m.url,
-    preview: m.preview,
-    file: m.file,
-    isExisting: !!m.url && !m.preview,
-  })));
-  const [uploading, setUploading] = useState(false);
-  const [pendingUploads, setPendingUploads] = useState(0);
-  const [errors, setErrors] = useState({});
   const fileInputRef = useRef(null);
+  const [photoDragOver, setPhotoDragOver] = useState(false);
+  const [directUrlInput, setDirectUrlInput] = useState('');
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 5,
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 200,
-        tolerance: 5,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
+  // Unify photo items whether passed as photos, images, or media
+  const photoList = useMemo(() => {
+    if (photos && photos.length > 0) return photos;
+    if (images && images.length > 0) return images;
+    if (media && media.length > 0) return media;
+    return [];
+  }, [photos, images, media]);
 
-  const handleDragEnd = useCallback((_event) => {
-    const { active, over } = event;
+  const isMaxPhotos = photoList.length >= maxPhotos;
 
-    if (!over || active.id === over.id) return;
-
-    setItems((currentItems) => {
-      const oldIndex = currentItems.findIndex((item) => item.id === active.id);
-      const newIndex = currentItems.findIndex((item) => item.id === over.id);
-      return arrayMove(currentItems, oldIndex, newIndex);
-    });
-  }, []);
-
-  const handleDragStart = useCallback((_event) => {
-    if (navigator.vibrate) {
-      navigator.vibrate(10);
+  const handleMove = (fromIndex, toIndex) => {
+    if (fromIndex === toIndex) return;
+    if (onMovePhoto) {
+      onMovePhoto(fromIndex, toIndex);
     }
-  }, []);
-
-  const uploadMedia = useCallback(async (file) => {
-    const isVideo = file.type.startsWith('video/');
-    
-    if (isVideo) {
-      if (file.size > MAX_VIDEO_SIZE) {
-        throw new Error('Video must be less than 10 MB');
-      }
-      if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
-        throw new Error('Unsupported video format. Use MP4, WebM, or MOV');
-      }
-    } else {
-      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-        throw new Error('Unsupported image format. Use JPEG, PNG, WebP, GIF, or AVIF');
-      }
-    }
-
-    const fileId = `${file.name}-${Date.now()}`;
-    setPendingUploads((prev) => prev + 1);
-    setUploading(true);
-
-    const previewUrl = URL.createObjectURL(file);
-    const tempId = `temp-${fileId}`;
-    
-    setItems((prev) => [...prev, {
-      id: tempId,
-      type: isVideo ? 'video' : 'image',
-      preview: previewUrl,
-      file,
-      isUploading: true,
-    }]);
-
-    if (onUploadProgress) onUploadProgress(fileId, 0);
-
-    try {
-      const downloadUrl = await uploadMediaToStorage({
-        category: 'properties',
-        productId: `item_${Date.now()}`,
-        mediaType: isVideo ? 'videos' : 'images',
-        file,
-        onProgress: (progress) => {
-          if (onUploadProgress) onUploadProgress(fileId, progress);
-        },
-      });
-
-      if (downloadUrl) {
-        setItems((prev) => prev.map((item) =>
-          item.id === tempId
-            ? { ...item, id: downloadUrl, url: downloadUrl, preview: undefined, file: undefined, isUploading: false, isExisting: true }
+    if (onMediaChange) {
+      const next = [...photoList];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      onMediaChange(
+        next.map((item) =>
+          typeof item === 'string'
+            ? { id: `media-${item}`, url: item, type: 'image' }
             : item
-        ));
-      } else {
-        throw new Error('No download URL returned from Firebase Storage');
-      }
-    } catch (err) {
-      setItems((prev) => prev.filter((item) => item.id !== tempId));
-      URL.revokeObjectURL(previewUrl);
-      throw err;
-    } finally {
-      setPendingUploads((prev) => Math.max(0, prev - 1));
-      setUploading(false);
+        )
+      );
     }
-  }, [onUploadProgress]);
+  };
 
-  const handleFileSelect = useCallback(async (e) => {
-    const files = Array.from(e.target.files);
-    e.target.value = '';
-
-    if (files.length === 0) return;
-
-    const currentCount = items.length;
-    const availableSlots = maxMedia - currentCount;
-    
-    if (availableSlots <= 0) {
-      setErrors({ general: `Maximum ${maxMedia} media items allowed` });
+  const handleRemove = (index) => {
+    if (onRemovePhoto) {
+      onRemovePhoto(index);
       return;
     }
-
-    const filesToUpload = files.slice(0, availableSlots);
-    setErrors({});
-
-    for (const file of filesToUpload) {
-      try {
-        await uploadMedia(file);
-      } catch (err) {
-        setErrors((prev) => ({ ...prev, [file.name]: err.message }));
-      }
+    if (onMediaChange) {
+      const next = photoList.filter((_, idx) => idx !== index);
+      onMediaChange(
+        next.map((item) =>
+          typeof item === 'string'
+            ? { id: `media-${item}`, url: item, type: 'image' }
+            : item
+        )
+      );
     }
-  }, [items.length, maxMedia, uploadMedia]);
+  };
 
-  const handleRemove = useCallback((id) => {
-    setItems((prev) => {
-      const item = prev.find((i) => i.id === id);
-      if (item?.preview && !item.url) {
-        URL.revokeObjectURL(item.preview);
-      }
-      if (item?.url && item.url.includes('firebasestorage')) {
-        deleteMediaFromStorage(item.url);
-      }
-      return prev.filter((i) => i.id !== id);
-    });
-  }, []);
+  const handleAddDirectLink = (e) => {
+    e?.preventDefault();
+    const trimmed = (directUrlInput || '').trim();
+    if (!trimmed || isMaxPhotos) return;
 
-  const handleMakePrimary = useCallback((id) => {
-    setItems((prev) => {
-      const index = prev.findIndex((i) => i.id === id);
-      if (index <= 0) return prev;
-      const newItems = [...prev];
-      const [moved] = newItems.splice(index, 1);
-      newItems.unshift(moved);
-      return newItems;
-    });
-  }, []);
-
-  const prevUrlsRef = useRef((media || []).map((m) => m.url).filter(Boolean));
-
-  // Sync items when parent media prop changes
-  useEffect(() => {
-    const parentUrls = (media || []).map((m) => m.url).filter(Boolean);
-    const currentItemUrls = items.map((i) => i.url).filter(Boolean);
-
-    if (
-      !items.some((i) => i.isUploading) &&
-      (parentUrls.length !== currentItemUrls.length ||
-        parentUrls.some((u, idx) => u !== currentItemUrls[idx]))
-    ) {
-      const newItems = (media || []).map((m, i) => ({
-        id: m.id || `media-${i}-${Date.now()}`,
-        type: m.type || (m.url?.startsWith('video') || m.preview?.startsWith('blob:video') ? 'video' : 'image'),
-        url: m.url,
-        preview: m.preview,
-        file: m.file,
-        isExisting: !!m.url && !m.preview,
-      }));
-      setItems(newItems);
-      prevUrlsRef.current = parentUrls;
+    if (onAddPhotoUrl) {
+      onAddPhotoUrl(trimmed);
+    } else if (onMediaChange) {
+      onMediaChange([
+        ...photoList.map((item) =>
+          typeof item === 'string' ? { id: `media-${item}`, url: item, type: 'image' } : item
+        ),
+        { id: `media-${trimmed}-${Date.now()}`, url: trimmed, type: 'image', isExisting: true },
+      ]);
     }
-  }, [media]);
-
-  useEffect(() => {
-    const currentUrls = items.map((item) => item.url).filter(Boolean);
-    const prevUrls = prevUrlsRef.current;
-
-    const hasChanged =
-      currentUrls.length !== prevUrls.length ||
-      currentUrls.some((url, index) => url !== prevUrls[index]);
-
-    if (hasChanged) {
-      prevUrlsRef.current = currentUrls;
-      const finalMedia = items.map((item) => ({
-        id: item.id,
-        type: item.type,
-        url: item.url,
-      }));
-      if (onMediaChange) {
-        onMediaChange(finalMedia);
-      }
-    }
-  }, [items, onMediaChange]);
-
-  useEffect(() => {
-    return () => {
-      items.forEach((item) => {
-        if (item.preview && !item.url) {
-          URL.revokeObjectURL(item.preview);
-        }
-      });
-    };
-  }, [items]);
-
-  if (items.length === 0 && disabled) {
-    return null;
-  }
+    setDirectUrlInput('');
+  };
 
   return (
-    <div className={className}>
-      <div className="mb-3 flex items-center justify-between">
-        <label className="text-sm font-semibold text-slate-700">
-          Media ({items.length}/{maxMedia})
-          {items.length > 0 && (
-            <span className="ml-2 text-xs text-slate-500">
-              {showMainBadge && items[0] && (
-                <span className="inline-flex items-center gap-1 text-yellow-600">
-                  <i className="fa-solid fa-star text-[9px]" />
-                  First is Main
-                </span>
-              )}
+    <div className={`space-y-3 ${className}`}>
+      {/* Hidden File Input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={(e) => {
+          const files = Array.from(e.target.files || []);
+          const remaining = Math.max(0, maxPhotos - photoList.length);
+          files.slice(0, remaining).forEach((f) => onAddPhoto?.(f));
+          e.target.value = '';
+        }}
+        accept="image/*"
+        multiple
+        disabled={disabled || isMaxPhotos || pendingUploads > 0}
+        className="hidden"
+        id={`${idPrefix}-file-input`}
+      />
+
+      {/* Top Header Bar */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-semibold text-slate-700">
+            Product Photos ({photoList.length}/{maxPhotos}) <span className="text-red-500">*</span>
+          </label>
+          {isMaxPhotos ? (
+            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+              Max {maxPhotos} Reached
+            </span>
+          ) : (
+            <span className="text-[10px] text-slate-400">
+              {maxPhotos - photoList.length} slot{maxPhotos - photoList.length === 1 ? '' : 's'} remaining
             </span>
           )}
-        </label>
-        {items.length < maxMedia && !disabled && (
-          <label htmlFor="media-upload" className="cursor-pointer">
-            <button
-              type="button"
-              disabled={uploading || items.length >= maxMedia}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-blue hover:text-brand-navy transition-colors disabled:opacity-50"
-            >
-              <i className="fa-solid fa-plus text-[10px]" />
-              Add Media
-            </button>
-          </label>
+        </div>
+        {!isMaxPhotos && !disabled && (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={pendingUploads > 0}
+            className="text-xs font-bold text-brand-blue hover:underline cursor-pointer disabled:opacity-50"
+          >
+            + Browse Files
+          </button>
         )}
       </div>
 
-      {errors.general && (
-        <p className="mb-3 text-xs text-red-500 flex items-center gap-1">
-          <i className="fa-solid fa-triangle-exclamation" /> {errors.general}
-        </p>
+      {/* Direct Image Link Input Bar */}
+      {!disabled && (
+        <div className="bg-slate-50/80 rounded-xl p-2.5 border border-slate-200/70 flex flex-col sm:flex-row gap-2 items-center">
+          <div className="relative flex-1 w-full">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <i className="fa-solid fa-link text-xs" />
+            </div>
+            <input
+              type="url"
+              value={directUrlInput}
+              disabled={isMaxPhotos || pendingUploads > 0}
+              onChange={(e) => setDirectUrlInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddDirectLink();
+                }
+              }}
+              placeholder={
+                isMaxPhotos
+                  ? `Maximum ${maxPhotos} images reached`
+                  : 'Paste direct image URL (bypasses Firebase storage directly to DB)'
+              }
+              className="w-full text-xs pl-8 pr-3 py-2 rounded-lg border border-slate-200 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue disabled:bg-slate-100 disabled:cursor-not-allowed"
+            />
+          </div>
+          <button
+            type="button"
+            disabled={isMaxPhotos || !directUrlInput.trim() || pendingUploads > 0}
+            onClick={handleAddDirectLink}
+            className="w-full sm:w-auto px-3.5 py-2 rounded-lg text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+          >
+            <i className="fa-solid fa-plus text-[10px]" />
+            <span>Add Link</span>
+          </button>
+        </div>
       )}
 
-      <input
-        id="media-upload"
-        type="file"
-        ref={fileInputRef}
-        accept={accept}
-        multiple
-        className="hidden"
-        onChange={handleFileSelect}
-        disabled={disabled || uploading || items.length >= maxMedia}
-      />
-
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-        onDragStart={handleDragStart}
-      >
-        <SortableContext
-          items={items.map((item) => item.id)}
-          strategy={rectSortingStrategy}
-        >
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {items.map((item, index) => (
-              <SortableMediaItem
-                key={item.id}
-                id={item.id}
-                media={item}
-                index={index}
-                isFirst={index === 0}
-                onRemove={() => handleRemove(item.id)}
-                onMakePrimary={() => handleMakePrimary(item.id)}
-              />
-            ))}
-          </div>
-        </SortableContext>
-        <DragOverlay>
-          {({ active }) => {
-            const item = items.find((i) => i.id === active.id);
-            if (!item) return null;
-            return (
-              <SortableMediaOverlay
-                media={item}
-                index={items.findIndex((i) => i.id === active.id)}
-                isFirst={items[0]?.id === active.id}
-                isVideo={item.type === 'video'}
-              />
-            );
+      {/* Main Dropzone or Grid */}
+      {photoList.length === 0 ? (
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            if (!disabled) setPhotoDragOver(true);
           }}
-        </DragOverlay>
-      </DndContext>
+          onDragLeave={() => setPhotoDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setPhotoDragOver(false);
+            if (disabled) return;
+            const files = Array.from(e.dataTransfer.files || []).filter((f) => f.type.startsWith('image/'));
+            files.slice(0, maxPhotos).forEach((f) => onAddPhoto?.(f));
+          }}
+          onClick={() => {
+            if (!disabled && pendingUploads === 0) fileInputRef.current?.click();
+          }}
+          className={`border-2 border-dashed rounded-2xl p-7 text-center transition-all ${
+            disabled
+              ? 'border-slate-200 bg-slate-50 cursor-not-allowed'
+              : photoDragOver
+              ? 'border-brand-blue bg-blue-50 cursor-pointer'
+              : 'border-slate-200 hover:border-blue-300 bg-slate-50/50 cursor-pointer'
+          }`}
+        >
+          <i className="fa-solid fa-cloud-arrow-up text-3xl text-brand-blue mb-2" />
+          <p className="text-sm font-bold text-slate-700">Click to upload files or drag &amp; drop photos here</p>
+          <p className="text-xs text-slate-400 mt-1">Supports JPG, PNG, WEBP (or paste direct image link above) · Max {maxPhotos} images</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <DragDropProvider
+            onDragEnd={(event) => {
+              if (event.canceled || disabled) return;
+              const { source } = event.operation;
+              if (isSortable(source)) {
+                const { initialIndex, index } = source;
+                if (initialIndex !== undefined && index !== undefined && initialIndex !== index) {
+                  handleMove(initialIndex, index);
+                }
+              }
+            }}
+          >
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              {photoList.map((item, idx) => {
+                const keyId = typeof item === 'string'
+                  ? item
+                  : item instanceof File
+                  ? `${item.name}-${item.size}-${idx}`
+                  : item?.url || item?.id || `photo-${idx}`;
+
+                return (
+                  <DndSortablePhotoItem
+                    key={keyId}
+                    id={keyId}
+                    idx={idx}
+                    item={item}
+                    isFirst={idx === 0}
+                    photosLength={photoList.length}
+                    onRemovePhoto={handleRemove}
+                    onMovePhoto={handleMove}
+                    disabled={disabled}
+                  />
+                );
+              })}
+              {!isMaxPhotos && !disabled && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={pendingUploads > 0}
+                  className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 hover:border-brand-blue flex flex-col items-center justify-center text-slate-400 hover:text-brand-blue transition-colors cursor-pointer bg-slate-50/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <i className="fa-solid fa-plus text-base mb-1" />
+                  <span className="text-[11px] font-bold">Add Photo</span>
+                  <span className="text-[9px] text-slate-400">File or Link</span>
+                </button>
+              )}
+            </div>
+          </DragDropProvider>
+          <p className="text-[11px] text-slate-400">
+            <i className="fa-solid fa-circle-info mr-1" />
+            Drag to reorder or use arrows. <strong>Position #1</strong> automatically serves as the primary cover photo.
+          </p>
+        </div>
+      )}
 
       {pendingUploads > 0 && (
-        <div className="mt-3 text-xs text-slate-500 flex items-center gap-2">
+        <div className="mt-2 text-xs text-slate-500 flex items-center gap-2">
           <i className="fa-solid fa-spinner fa-spin text-brand-blue" />
           Uploading {pendingUploads} media item{pendingUploads > 1 ? 's' : ''}...
         </div>

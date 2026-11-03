@@ -17,7 +17,7 @@ export default function ProfileHeader({ data }) {
           <div className="flex flex-wrap gap-x-6 gap-y-1 mt-2 text-sm text-slate-600">
             <span className="inline-flex items-center gap-2">
               <i className="fa-solid fa-phone text-slate-300 text-xs" aria-hidden="true" />
-              {data.contact || '—'}
+              {data.phone || data.contact || '—'}
             </span>
             <span className="inline-flex items-center gap-2 truncate">
               <i className="fa-solid fa-envelope text-slate-300 text-xs" aria-hidden="true" />

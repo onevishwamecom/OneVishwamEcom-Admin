@@ -43,7 +43,7 @@ export const adminLoginUser = createAsyncThunk(
         const session = {
           id: adminData?.id || adminData?._id,
           email: adminData?.email || cleanEmail,
-          displayName: adminData?.fullName || 'Super Admin',
+          displayName: adminData?.name || adminData?.fullName || 'Super Admin',
           role: adminData?.role || 'super-admin',
           loggedInAt: new Date().toISOString(),
         };
@@ -75,7 +75,7 @@ export const adminLoginUser = createAsyncThunk(
     } catch (firebaseErr) {
       let message = 'Invalid admin credentials';
       if (firebaseErr.code === 'auth/user-not-found' || firebaseErr.code === 'auth/invalid-credential') {
-        message = 'Invalid email or password. Please use admin@onevishwam.com / Admin@789.';
+        message = 'Invalid email or password.';
       } else if (firebaseErr.message) {
         message = firebaseErr.message;
       }

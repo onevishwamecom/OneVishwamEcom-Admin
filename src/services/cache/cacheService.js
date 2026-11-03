@@ -15,19 +15,21 @@
  * ============================================================================
  */
 
+import { memoryCache } from '../../utils/lruCache';
+
 const STORAGE_PREFIX = 'onevishwam_cache';
-const CACHE_VERSION = 3; // bumped to invalidate stale cached listing data
+const CACHE_VERSION = 8;
 
 /** Configurable freshness lifetimes (ms) — tune per data type, never hardcode. */
 export const CACHE_TTL = {
   user: 30 * 60 * 1000, // 30 min — profile, revalidated after login
-  dashboard: 30 * 1000, // 30 sec — admin stats (short TTL, always revalidates)
-  listings: 30 * 1000, // 30 sec — admin listing collections (short TTL for fresh data)
+  dashboard: 10 * 1000, // 10 sec — admin stats (short TTL, always revalidates)
+  listings: 15 * 1000, // 15 sec — admin listing collections (short TTL for fresh data)
   products: 10 * 60 * 1000, // 10 min — public listing collections
-  detail: 30 * 1000, // 30 sec — single listing detail (short TTL for admin review)
+  detail: 15 * 1000, // 15 sec — single listing detail (short TTL for admin review)
   similar: 10 * 60 * 1000, // 10 min — "similar items"
-  categories: 60 * 60 * 1000, // 1 hr — relatively static metadata
-  activity: 30 * 1000, // 30 sec — audit trail (short TTL)
+  categories: 10 * 1000, // 10 sec — dynamic category sector counts
+  activity: 15 * 1000, // 15 sec — audit trail (short TTL)
 };
 
 export const PUBLIC_NAMESPACE = 'public';
@@ -95,7 +97,16 @@ export function clearInflight(key) {
 
 export const cache = {
   get(namespace, key) {
-    return safeRead(storageKey(namespace, key));
+    const sKey = storageKey(namespace, key);
+    const memRecord = memoryCache.get(sKey);
+    if (memRecord) return memRecord;
+
+    const diskRecord = safeRead(sKey);
+    if (diskRecord) {
+      memoryCache.set(sKey, diskRecord);
+      return diskRecord;
+    }
+    return null;
   },
 
   getWithMetadata(namespace, key) {
@@ -104,27 +115,49 @@ export const cache = {
 
   set(namespace, key, data, params = {}) {
     const record = { data, params, cachedAt: Date.now(), version: CACHE_VERSION };
-    safeWrite(storageKey(namespace, key), record);
+    const sKey = storageKey(namespace, key);
+    memoryCache.set(sKey, record);
+    safeWrite(sKey, record);
     return record;
   },
 
   remove(namespace, key) {
+    const sKey = storageKey(namespace, key);
+    memoryCache.delete(sKey);
     try {
-      localStorage.removeItem(storageKey(namespace, key));
+      localStorage.removeItem(sKey);
     } catch {
       /* ignore */
     }
   },
 
-  /** Remove every cache entry whose key starts with `prefix` in a namespace. */
+  /** Remove every cache entry whose key starts with `prefix` in a namespace, or contains `prefix` */
   removeByPrefix(namespace, prefix) {
     const start = `${STORAGE_PREFIX}_v${CACHE_VERSION}_${namespace}_`;
     const doomed = [];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (k && k.startsWith(start + prefix)) doomed.push(k);
+      if (
+        k &&
+        (k.startsWith(start + prefix) ||
+          k.includes(`_${prefix}`) ||
+          (prefix && k.endsWith(`_${prefix}`)))
+      ) {
+        doomed.push(k);
+      }
     }
-    doomed.forEach((k) => localStorage.removeItem(k));
+    doomed.forEach((k) => {
+      memoryCache.delete(k);
+      try {
+        localStorage.removeItem(k);
+      } catch {
+        /* ignore */
+      }
+    });
+    // Invalidate in memory cache
+    if (!prefix || prefix.startsWith('listing') || prefix.startsWith('stats')) {
+      memoryCache.clear();
+    }
   },
 
   clearNamespace(namespace) {
@@ -132,6 +165,7 @@ export const cache = {
   },
 
   clear() {
+    memoryCache.clear();
     const start = `${STORAGE_PREFIX}_v${CACHE_VERSION}_`;
     const doomed = [];
     for (let i = 0; i < localStorage.length; i++) {

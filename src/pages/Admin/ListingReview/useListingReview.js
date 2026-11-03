@@ -32,20 +32,25 @@ function showErrorToast(title, text) {
 
 function buildOverrideForm(base, type) {
   if (!base) return {};
+  const isProperty = type === 'properties' || base._type === 'properties' || base.category === 'properties';
   const form = { ...(base.details || {}), ...base };
   COMMON_FIELDS.forEach((f) => {
     form[f.key] = base[f.key] ?? base.details?.[f.key] ?? form[f.key] ?? '';
   });
-  form.subcategory = base.subcategory || base.subCategory || base.details?.subcategory || '';
+  const resolvedType = base.propertyType || base.subcategory || '';
+  if (isProperty) {
+    form.propertyType = resolvedType;
+    delete form.subcategory;
+  } else {
+    form.subcategory = base.subcategory || '';
+  }
   form.priceType = base.priceType || 'fixed';
-  form.videoUrl = base.videoUrl || base.video || base.details?.videoUrl || '';
-  form.pdfUrl = base.pdfUrl || base.brochure || base.details?.pdfUrl || '';
-  form.documents = Array.isArray(base.documents)
-    ? [...base.documents]
-    : (Array.isArray(base.details?.documents) ? [...base.details.documents] : []);
+  form.videoUrl = base.videoUrl || '';
+  form.pdfUrl = base.pdfUrl || base.brochure || '';
+  form.documents = Array.isArray(base.documents) ? [...base.documents] : [];
 
-  const typeKey = type || base._type || base.category || 'properties';
-  const catFields = getCategoryFields(typeKey, form.subcategory);
+  const typeKey = type || base._type || 'properties';
+  const catFields = getCategoryFields(typeKey, resolvedType || form.subcategory);
   catFields.forEach((f) => {
     form[f.key] = base[f.key] ?? base.details?.[f.key] ?? form[f.key] ?? '';
   });
@@ -80,6 +85,7 @@ export default function useListingReview() {
     Promise.all([
       cache.fetch(ns, listingKey, () => adminApi.getListing(type, id), {
         ttl: CACHE_TTL.detail,
+        force: true, // Always force fresh fetch from database on review page
       }),
       cache.fetch(ns, 'contributors', () => adminApi.getContributors(), {
         ttl: CACHE_TTL.listings,
@@ -104,7 +110,17 @@ export default function useListingReview() {
   useEffect(() => {
     if (listing) {
       setOverrideForm(buildOverrideForm(listing, type));
-      setOverrideImages(Array.isArray(listing.images) ? [...listing.images] : []);
+      const currentImgs =
+        Array.isArray(listing.images) && listing.images.length > 0
+          ? [...listing.images]
+          : Array.isArray(listing.photos) && listing.photos.length > 0
+          ? [...listing.photos]
+          : Array.isArray(listing.details?.images) && listing.details.images.length > 0
+          ? [...listing.details.images]
+          : listing.image
+          ? [listing.image]
+          : [];
+      setOverrideImages(currentImgs);
     }
   }, [listing, type]);
 
@@ -130,14 +146,24 @@ export default function useListingReview() {
 
   const startOverride = () => {
     if (!listing) return;
+    const currentImgs =
+      Array.isArray(listing.images) && listing.images.length > 0
+        ? [...listing.images]
+        : Array.isArray(listing.photos) && listing.photos.length > 0
+        ? [...listing.photos]
+        : Array.isArray(listing.details?.images) && listing.details.images.length > 0
+        ? [...listing.details.images]
+        : listing.image
+        ? [listing.image]
+        : [];
     setOverrideForm(buildOverrideForm(listing, type));
-    setOverrideImages(Array.isArray(listing.images) ? [...listing.images] : []);
+    setOverrideImages(currentImgs);
     setActiveModal('override');
   };
 
   const confirmApprove = async () => {
     try {
-      const updated = await adminApi.updateListing(type, id, { status: 'approved' });
+      const updated = await adminApi.approveListing(type, id);
       if (updated) {
         setListing(updated);
         showToast('Approved', 'Listing is now approved.');
@@ -152,10 +178,7 @@ export default function useListingReview() {
     const comment = reason.trim();
     if (!comment) return;
     try {
-      const updated = await adminApi.updateListing(type, id, {
-        status: 'changes-required',
-        adminComment: comment,
-      });
+      const updated = await adminApi.requestChanges(type, id, comment);
       if (updated) {
         setListing(updated);
         showToast('Request Sent', 'Contributor will be asked to update the listing.');
@@ -171,10 +194,7 @@ export default function useListingReview() {
     const r = reason.trim();
     if (!r) return;
     try {
-      const updated = await adminApi.updateListing(type, id, {
-        status: 'cancelled',
-        adminComment: r,
-      });
+      const updated = await adminApi.cancelListing(type, id, r);
       if (updated) {
         setListing(updated);
         showToast('Listing Cancelled', 'The listing is hidden and marked cancelled.');
@@ -187,7 +207,33 @@ export default function useListingReview() {
   };
 
   const confirmOverride = async () => {
-    const payload = { ...overrideForm, images: overrideImages };
+    const cleanImgs = (Array.isArray(overrideImages) ? overrideImages : [])
+      .map((u) => (typeof u === 'string' ? u.trim() : (u?.url || '')))
+      .filter(Boolean)
+      .slice(0, 5);
+
+    const isProp = type === 'properties' || listing?._type === 'properties' || listing?.category === 'properties';
+    const cleanPropType = overrideForm.propertyType || overrideForm.subcategory || listing?.propertyType;
+
+    const payload = {
+      ...overrideForm,
+      images: cleanImgs,
+      photos: cleanImgs,
+      details: {
+        ...(typeof overrideForm?.details === 'object' && overrideForm.details !== null ? overrideForm.details : {}),
+        images: cleanImgs,
+        photos: cleanImgs,
+      },
+    };
+    if (isProp) {
+      payload.propertyType = cleanPropType;
+      if (payload.details && typeof payload.details === 'object') {
+        payload.details.propertyType = cleanPropType;
+      }
+      delete payload.subcategory;
+    }
+    // Edits made in admin must not become pending status; let it be in approved
+    payload.status = 'approved';
     if (payload.possessionStatus !== undefined) {
       payload.possession = payload.possessionStatus;
       if (payload.details && typeof payload.details === "object") {
@@ -197,7 +243,20 @@ export default function useListingReview() {
     try {
       const updated = await adminApi.updateListing(type, id, payload);
       if (updated) {
-        setListing(updated);
+        const finalItem = {
+          ...updated,
+          images: cleanImgs.length > 0 ? cleanImgs : updated.images,
+          photos: cleanImgs.length > 0 ? cleanImgs : updated.photos,
+          details: {
+            ...(typeof updated.details === 'object' && updated.details !== null ? updated.details : {}),
+            images: cleanImgs.length > 0 ? cleanImgs : updated.details?.images,
+            photos: cleanImgs.length > 0 ? cleanImgs : updated.details?.photos,
+          },
+        };
+        setListing(finalItem);
+        setOverrideImages(cleanImgs);
+        // Explicitly write the updated listing into cache so any immediate read has the new state
+        cache.set(ns, listingKey, finalItem);
         showToast('Override Saved', 'Listing information has been overridden.');
       }
     } catch {
@@ -277,12 +336,13 @@ export default function useListingReview() {
     }
   };
 
-  const images =
-    Array.isArray(listing?.images) && listing.images.length > 0
-      ? listing.images
-      : listing?.image
-      ? [listing.image]
-      : [];
+  const images = useMemo(() => {
+    if (Array.isArray(listing?.images) && listing.images.length > 0) return listing.images;
+    if (Array.isArray(listing?.photos) && listing.photos.length > 0) return listing.photos;
+    if (Array.isArray(listing?.details?.images) && listing.details.images.length > 0) return listing.details.images;
+    if (listing?.image) return [listing.image];
+    return [];
+  }, [listing]);
 
   return {
     type,

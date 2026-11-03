@@ -5,11 +5,16 @@ import { CACHE_TTL } from '../../../services/cache/cacheService';
 export default function useAdminDashboard() {
   const { data, loading, error, retry } = useAsyncData(
     async () => {
-      const [s, c] = await Promise.all([
+      const [s, c, v] = await Promise.all([
         adminApi.getStats(),
         adminApi.getContributors(),
+        adminApi.getVisitorStats().catch(() => null),
       ]);
-      return { stats: s, contributors: c };
+      const mergedStats = {
+        ...(s || {}),
+        visitorStats: v || s?.visitorStats || null,
+      };
+      return { stats: mergedStats, contributors: c };
     },
     [],
     { stats: null, contributors: [] },
