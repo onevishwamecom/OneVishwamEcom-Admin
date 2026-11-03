@@ -4,22 +4,23 @@ import { useAdminAuth, adminFetchMe } from './store/adminSlice';
 import store from './store';
 import BrandLoader from './components/ui/BrandLoader';
 import ErrorBoundary from './components/ErrorBoundary';
+import { lazyWithRetry } from './utils/lazyWithRetry';
 
-const AdminLogin = lazy(() => import('./pages/Admin/AdminLogin'));
-const AdminLayout = lazy(() => import('./components/Admin/AdminLayout'));
-const AdminDashboard = lazy(() => import('./pages/Admin/AdminDashboard'));
-const AdminListings = lazy(() => import('./pages/Admin/AdminListings'));
-const AdminContributors = lazy(() => import('./pages/Admin/AdminContributors'));
-const ContributorProfile = lazy(() => import('./pages/Admin/ContributorProfile'));
-const AdminCategories = lazy(() => import('./pages/Admin/AdminCategories'));
-const AdminAnnouncements = lazy(() => import('./pages/Admin/AdminAnnouncements'));
-const AdminActivity = lazy(() => import('./pages/Admin/AdminActivity'));
-const ListedItems = lazy(() => import('./pages/Admin/ListedItems'));
-const ListingReview = lazy(() => import('./pages/Admin/ListingReview'));
-const AdminUsers = lazy(() => import('./pages/Admin/AdminUsers'));
-const CustomerProfile = lazy(() => import('./pages/Admin/CustomerProfile'));
-const AdminBulkListings = lazy(() => import('./pages/Admin/AdminBulkListings'));
-const AdminNotFound = lazy(() => import('./pages/Admin/AdminNotFound'));
+const AdminLogin = lazyWithRetry(() => import('./pages/Admin/AdminLogin'));
+const AdminLayout = lazyWithRetry(() => import('./components/Admin/AdminLayout'));
+const AdminDashboard = lazyWithRetry(() => import('./pages/Admin/AdminDashboard'));
+const AdminListings = lazyWithRetry(() => import('./pages/Admin/AdminListings'));
+const AdminContributors = lazyWithRetry(() => import('./pages/Admin/AdminContributors'));
+const ContributorProfile = lazyWithRetry(() => import('./pages/Admin/ContributorProfile'));
+const AdminCategories = lazyWithRetry(() => import('./pages/Admin/AdminCategories'));
+const AdminAnnouncements = lazyWithRetry(() => import('./pages/Admin/AdminAnnouncements'));
+const AdminActivity = lazyWithRetry(() => import('./pages/Admin/AdminActivity'));
+const ListedItems = lazyWithRetry(() => import('./pages/Admin/ListedItems'));
+const ListingReview = lazyWithRetry(() => import('./pages/Admin/ListingReview'));
+const AdminUsers = lazyWithRetry(() => import('./pages/Admin/AdminUsers'));
+const CustomerProfile = lazyWithRetry(() => import('./pages/Admin/CustomerProfile'));
+const AdminBulkListings = lazyWithRetry(() => import('./pages/Admin/AdminBulkListings'));
+const AdminNotFound = lazyWithRetry(() => import('./pages/Admin/AdminNotFound'));
 
 function RequireAdmin({ children }) {
   const { isAdminLoggedIn } = useAdminAuth();

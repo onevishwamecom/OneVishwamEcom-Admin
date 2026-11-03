@@ -64,9 +64,10 @@ function getStringWidth(str) {
     if (
       (code >= 0x1f300 && code <= 0x1faff) ||
       (code >= 0x2600 && code <= 0x27bf) ||
-      (code >= 0x2300 && code <= 0x23ff) ||
       (code >= 0x2b50 && code <= 0x2b55) ||
-      (code >= 0x1f1e6 && code <= 0x1f1ff)
+      (code >= 0x1f1e6 && code <= 0x1f1ff) ||
+      code === 0x231a || code === 0x231b || code === 0x23e9 || code === 0x23ea ||
+      code === 0x23eb || code === 0x23ec || code === 0x23f0 || code === 0x23f3
     ) {
       width += 2;
     } else {
@@ -77,9 +78,21 @@ function getStringWidth(str) {
 }
 
 // Render mathematically aligned, pixel-perfect terminal double-box
-function renderBox({ title, subtitle, items = [], borderColor = C.brightGreen, innerWidth = 68 }) {
-  const maxAllowed = Math.max(46, (process.stdout.columns || 80) - 8);
-  const w = Math.min(innerWidth, maxAllowed);
+function renderBox({ title, subtitle, items = [], borderColor = C.brightGreen, innerWidth = null }) {
+  const visLens = [
+    title ? getStringWidth(title) : 0,
+    subtitle ? getStringWidth(subtitle) : 0,
+    ...items.map(getStringWidth),
+  ];
+  const maxContentLen = Math.max(...visLens, 40);
+
+  // Keep securely within terminal width to prevent line wrapping
+  const termCols = process.stdout.columns || 80;
+  const maxAllowed = Math.max(46, termCols - 6);
+
+  const w = innerWidth
+    ? Math.min(innerWidth, maxAllowed)
+    : Math.min(maxContentLen + 2, maxAllowed);
 
   const top = `${borderColor}  ╔${'═'.repeat(w + 2)}╗${C.reset}`;
   const div = `${borderColor}  ╠${'═'.repeat(w + 2)}╣${C.reset}`;
@@ -431,7 +444,7 @@ async function deploy() {
       `${C.bold}🎯 Deploy Target:${C.reset}    ${C.brightMagenta}hosting:${CONFIG.target}${C.reset} → ${C.brightWhite}${CONFIG.site}${C.reset}`,
       `${C.bold}📦 Total Assets:${C.reset}     ${C.brightWhite}${totalFiles} files synchronized${C.reset}`,
       `${C.bold}📊 Upload Size:${C.reset}      ${C.brightGreen}${formatBytes(totalBytes)}${C.reset}`,
-      `${C.bold}⏱️  Elapsed Time:${C.reset}     ${C.brightYellow}${elapsed}${C.reset}`,
+      `${C.bold}🕒 Elapsed Time:${C.reset}     ${C.brightYellow}${elapsed}${C.reset}`,
     ],
     borderColor: C.brightGreen,
     innerWidth: 70,

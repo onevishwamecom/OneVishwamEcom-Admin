@@ -75,7 +75,7 @@ export const adminLoginUser = createAsyncThunk(
     } catch (firebaseErr) {
       let message = 'Invalid admin credentials';
       if (firebaseErr.code === 'auth/user-not-found' || firebaseErr.code === 'auth/invalid-credential') {
-        message = 'Invalid email or password. Please use admin@onevishwam.com / Admin@789.';
+        message = 'Invalid email or password.';
       } else if (firebaseErr.message) {
         message = firebaseErr.message;
       }

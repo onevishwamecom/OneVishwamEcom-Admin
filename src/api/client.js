@@ -15,9 +15,7 @@ import { auth } from '../firebase/config';
  * ============================================================================
  */
 
-const DEFAULT_API_URL = import.meta.env.DEV
-  ? 'http://localhost:5001/api'
-  : 'https://asia-south1-onevishwam.cloudfunctions.net/api';
+const DEFAULT_API_URL = 'https://asia-south1-onevishwam.cloudfunctions.net/api';
 
 const client = axios.create({
   baseURL:

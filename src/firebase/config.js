@@ -1,5 +1,7 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
+import "firebase/auth";
 import { getStorage } from "firebase/storage";
+import "firebase/storage";
 import {
   getAuth,
   signInWithEmailAndPassword,
@@ -20,7 +22,7 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase App
-export const app = initializeApp(firebaseConfig);
+export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
 // Initialize Firebase Auth
 export const auth = getAuth(app);
