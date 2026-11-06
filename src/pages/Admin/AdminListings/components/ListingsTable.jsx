@@ -4,6 +4,7 @@ import { Link, useSearchParams, useLocation } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { formatINR, formatDate } from '../../../../utils';
 import { StatusBadge, DataTable } from '../../../../components/Admin/AdminUi';
+import CategoryBadge, { normalizeCategoryKey } from '../../../../components/ui/CategoryBadge';
 import { adminApi } from '../../../../api/adminData';
 
 const COLUMNS = [
@@ -86,9 +87,7 @@ function renderListingRow(
 
     /* Category */
     <td key="category" className="w-px whitespace-nowrap">
-      <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600">
-        {category?.label || l._type}
-      </span>
+      <CategoryBadge category={l._type || l.category} />
     </td>,
 
     /* Location */
@@ -176,9 +175,31 @@ export default function ListingsTable({
 }) {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = React.useState('');
-  const [selectedCategory, setSelectedCategory] = React.useState('');
   const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedCategory, setSelectedCategory] = React.useState(() => searchParams.get('category') || '');
   const location = useLocation();
+
+  React.useEffect(() => {
+    const cat = searchParams.get('category') || '';
+    if (cat !== selectedCategory) {
+      setSelectedCategory(cat);
+    }
+  }, [searchParams]);
+
+  const handleCategoryChange = (val) => {
+    setSelectedCategory(val);
+    setPage(1);
+    setSearchParams((prevParams) => {
+      const updated = new URLSearchParams(prevParams);
+      if (val) {
+        updated.set('category', val);
+      } else {
+        updated.delete('category');
+      }
+      updated.delete('page');
+      return updated;
+    });
+  };
 
   const isControlled = controlledPage !== undefined && controlledOnPageChange !== undefined;
 
@@ -279,7 +300,11 @@ export default function ListingsTable({
         catLabel.includes(searchLower) ||
         location.includes(searchLower);
       
-      const matchesCategory = !selectedCategory || l._type === selectedCategory;
+      const matchesCategory =
+        !selectedCategory ||
+        selectedCategory === 'all' ||
+        normalizeCategoryKey(l._type) === normalizeCategoryKey(selectedCategory) ||
+        normalizeCategoryKey(l.category) === normalizeCategoryKey(selectedCategory);
       
       return matchesSearch && matchesCategory;
     },
@@ -411,16 +436,15 @@ export default function ListingsTable({
             className="flex-1 min-w-[160px] rounded-md border border-slate-200 py-1.5 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20 transition-all duration-150"
           />
           <select
-            value={selectedCategory}
-            onChange={(e) => {
-              setSelectedCategory(e.target.value);
-              setPage(1);
-            }}
-            className="rounded-md border border-slate-200 py-1.5 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+            value={normalizeCategoryKey(selectedCategory) || ''}
+            onChange={(e) => handleCategoryChange(e.target.value)}
+            className="rounded-md border border-slate-200 py-1.5 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20 cursor-pointer"
           >
             <option value="">All Categories</option>
             <option value="properties">Properties</option>
-            <option value="vehicles">Vehicles</option>
+            <option value="automobiles">Automobiles</option>
+            <option value="electronics">Consumer Electronics</option>
+            <option value="comfort">Bedding & Comfort</option>
             <option value="groceries">Groceries</option>
             <option value="garments">Garments</option>
             <option value="jewellery">Jewellery</option>

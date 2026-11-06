@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 
 const SECTOR_TAGS = {
   properties: { label: 'Properties', icon: 'fa-house-chimney', badge: 'bg-blue-50 text-blue-700 border-blue-200' },
-  vehicles: { label: 'Vehicles', icon: 'fa-car', badge: 'bg-amber-50 text-amber-700 border-amber-200' },
+  automobiles: { label: 'Automobiles', icon: 'fa-car', badge: 'bg-amber-50 text-amber-700 border-amber-200' },
   electronics: { label: 'Electronics', icon: 'fa-tv', badge: 'bg-rose-50 text-rose-700 border-rose-200' },
   garments: { label: 'Fashion', icon: 'fa-shirt', badge: 'bg-purple-50 text-purple-700 border-purple-200' },
   jewellery: { label: 'Jewellery', icon: 'fa-gem', badge: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
@@ -26,6 +26,16 @@ function timeAgo(dateStr) {
   return `${days}d ago`;
 }
 
+function normalizeSector(c = '') {
+  const s = String(c || '').toLowerCase().trim();
+  if (s === 'vehicle' || s === 'vehicles' || s === 'automobile' || s === 'automobiles') return 'automobiles';
+  if (s === 'property' || s === 'real-estate') return 'properties';
+  if (s === 'grocery') return 'groceries';
+  if (s === 'garment') return 'garments';
+  if (s === 'bedding' || s === 'bedding-comfort') return 'comfort';
+  return s || 'general';
+}
+
 export default function BrowsingHistoryList({ history = [] }) {
   const [selectedSector, setSelectedSector] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -35,7 +45,7 @@ export default function BrowsingHistoryList({ history = [] }) {
   const availableSectors = useMemo(() => {
     const counts = {};
     history.forEach((item) => {
-      const cat = (item.category || 'general').toLowerCase();
+      const cat = normalizeSector(item.category);
       counts[cat] = (counts[cat] || 0) + 1;
     });
     return counts;
@@ -47,7 +57,7 @@ export default function BrowsingHistoryList({ history = [] }) {
 
     if (selectedSector !== 'all') {
       result = result.filter(
-        (item) => (item.category || 'general').toLowerCase() === selectedSector.toLowerCase()
+        (item) => normalizeSector(item.category) === selectedSector.toLowerCase()
       );
     }
 
@@ -207,7 +217,7 @@ export default function BrowsingHistoryList({ history = [] }) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredList.map((item, idx) => {
-            const cat = (item.category || 'general').toLowerCase();
+            const cat = normalizeSector(item.category);
             const tagMeta = SECTOR_TAGS[cat] || {
               label: cat.charAt(0).toUpperCase() + cat.slice(1),
               icon: 'fa-compass',

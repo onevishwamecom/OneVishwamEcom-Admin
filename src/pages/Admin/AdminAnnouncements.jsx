@@ -280,7 +280,7 @@ export default function AdminAnnouncements() {
             className="rounded-xl border border-amber-300 bg-white text-xs font-bold text-slate-900 px-3 py-2 focus:outline-none focus:border-amber-500 shadow-2xs"
           >
             <option value="properties">Properties</option>
-            <option value="automobile">Vehicles</option>
+            <option value="automobile">Automobiles</option>
             <option value="consumer-electronics">Consumer Electronics</option>
             <option value="bedding-comfort">Bedding & Comfort</option>
             <option value="finance">Finance</option>

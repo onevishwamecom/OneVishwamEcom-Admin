@@ -4,26 +4,10 @@ import { getDisplayId, formatDate, formatINR } from '../../utils';
 import Button from './Button';
 import IconButton from './IconButton';
 import StatusPill from './StatusPill';
-import CategoryBadge from './CategoryBadge';
+import CategoryBadge, { CATEGORY_CONFIG, normalizeCategoryKey } from './CategoryBadge';
 
-// Standard category visual configuration
-export const DEFAULT_CATEGORY_CONFIG = {
-  properties: { label: 'Properties', icon: 'fa-house-chimney', color: 'bg-blue-50 text-brand-blue border-blue-100' },
-  property: { label: 'Properties', icon: 'fa-house-chimney', color: 'bg-blue-50 text-brand-blue border-blue-100' },
-  vehicle: { label: 'Vehicle', icon: 'fa-car-side', color: 'bg-amber-50 text-amber-700 border-amber-200' },
-  vehicles: { label: 'Vehicles', icon: 'fa-car-side', color: 'bg-amber-50 text-amber-700 border-amber-200' },
-  grocery: { label: 'Grocery', icon: 'fa-basket-shopping', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  groceries: { label: 'Groceries', icon: 'fa-basket-shopping', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  garment: { label: 'Garments', icon: 'fa-shirt', color: 'bg-purple-50 text-purple-700 border-purple-200' },
-  garments: { label: 'Garments', icon: 'fa-shirt', color: 'bg-purple-50 text-purple-700 border-purple-200' },
-  jewellery: { label: 'Jewellery', icon: 'fa-gem', color: 'bg-cyan-50 text-cyan-700 border-cyan-200' },
-  finance: { label: 'Finance', icon: 'fa-building-columns', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
-  'finance-offerings': { label: 'Finance Offerings', icon: 'fa-building-columns', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
-  electronics: { label: 'Electronics', icon: 'fa-tv', color: 'bg-teal-50 text-teal-700 border-teal-200' },
-  bedding: { label: 'Bedding', icon: 'fa-bed', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  'bedding-comfort': { label: 'Bedding & Comfort', icon: 'fa-bed', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  services: { label: 'Services', icon: 'fa-wrench', color: 'bg-slate-100 text-slate-700 border-slate-200' },
-};
+// Standard category visual configuration (single source of truth from CategoryBadge)
+export const DEFAULT_CATEGORY_CONFIG = CATEGORY_CONFIG;
 
 // Standard status pill configuration
 export const DEFAULT_STATUS_CONFIG = {
@@ -367,8 +351,8 @@ function ListingTable({
             const title = item.title || item.name || item.brand || 'Untitled Product';
             const detailUrl = resolveDetailUrl(item);
             const loc = [item.area, item.city].filter(Boolean).join(', ') || item.location || item.city || item.area || '—';
-            const typeKey = (item._type || item.category || '').toLowerCase();
-            const catCfg = categoryConfigMap[typeKey] || DEFAULT_CATEGORY_CONFIG[typeKey] || {
+            const typeKey = normalizeCategoryKey(item._type || item.category || '');
+            const catCfg = categoryConfigMap?.[typeKey] || DEFAULT_CATEGORY_CONFIG[typeKey] || {
               label: item._type || item.category || 'General',
               icon: 'fa-box-open',
               color: 'bg-blue-50 text-brand-blue border-blue-100',
