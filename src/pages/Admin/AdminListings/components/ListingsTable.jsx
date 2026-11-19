@@ -136,37 +136,17 @@ function renderListingRow(
       <StatusBadge status={l.status} />
     </td>,
 
-    /* Action (View Details + Delete) */
-    <td key="action" className="text-right w-16 whitespace-nowrap">
-      <div className="inline-flex items-center justify-end gap-1">
-        <Link
-          to={`/admin/listings/${l._type}/${l._id || l.id}`}
-          state={{
-            fromPage: currentPage,
-            fromPath: routerLocation ? `${routerLocation.pathname}${routerLocation.search}` : undefined,
-          }}
-          onClick={() => {
-            try {
-              sessionStorage.setItem('admin_listings_page', String(currentPage));
-            } catch (e) {}
-            onOpenListing?.(l);
-          }}
-          className="inline-flex items-center justify-center h-6 w-6 rounded-md border border-slate-200 bg-slate-50 text-slate-600 hover:bg-brand-blue hover:text-white hover:border-brand-blue transition-colors shrink-0 cursor-pointer shadow-2xs"
-          title="View & Review details"
-          aria-label="View listing details"
-        >
-          <i className="fa-solid fa-arrow-up-right-from-square text-[10px]" aria-hidden="true" />
-        </Link>
-        <button
-          type="button"
-          onClick={handleDelete}
-          className="inline-flex items-center justify-center h-6 w-6 rounded-md border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-colors shrink-0 cursor-pointer shadow-2xs"
-          title="Delete listing"
-          aria-label="Delete listing"
-        >
-          <i className="fa-solid fa-trash-can text-[10px]" aria-hidden="true" />
-        </button>
-      </div>
+    /* Action (Delete) */
+    <td key="action" className="text-right w-10 whitespace-nowrap">
+      <button
+        type="button"
+        onClick={handleDelete}
+        className="inline-flex items-center justify-center h-6 w-6 rounded-md border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:border-rose-300 transition-colors shrink-0 cursor-pointer"
+        title="Delete listing"
+        aria-label="Delete listing"
+      >
+        <i className="fa-solid fa-trash-can text-[10px]" aria-hidden="true" />
+      </button>
     </td>,
   ];
 }
@@ -276,7 +256,7 @@ export default function ListingsTable({
       },
       { key: 'availability', label: 'Availability', className: 'w-24 whitespace-nowrap' },
       { key: 'status',       label: 'Status',       className: 'w-24 whitespace-nowrap' },
-      { key: 'action',       label: 'Action',       className: 'w-16 whitespace-nowrap text-right' },
+      { key: 'action',       label: 'Action',       className: 'w-10 whitespace-nowrap text-right' },
     ],
     [sortField, sortOrder],
   );
