@@ -99,33 +99,33 @@ function renderListingRow(
       {formatDate(l.createdAt)}
     </td>,
 
-    /* Availability */
+    /* Stock / Availability */
     <td key="availability" className="w-24 whitespace-nowrap">
       <button
         type="button"
         onClick={handleToggle}
         disabled={updatingAvailability === l._id || updatingAvailability === l.id}
-        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold border capitalize whitespace-nowrap shadow-2xs transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-80 ${
+        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-semibold border transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-2xs cursor-pointer ${
           isSoldOut
-            ? 'bg-red-50 text-red-600 border-red-200/70 hover:bg-red-100'
-            : 'bg-emerald-50 text-emerald-600 border-emerald-200/70 hover:bg-emerald-100'
+            ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
+            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
         }`}
-        title={isSoldOut ? 'Click to mark as Available' : 'Click to mark as Sold Out'}
+        title={isSoldOut ? 'Sold Out — Click to mark In Stock' : 'In Stock — Click to mark Sold Out'}
       >
         {updatingAvailability === l._id || updatingAvailability === l.id ? (
           <>
-            <i className="fa-solid fa-circle-notch fa-spin text-[8px]" aria-hidden="true" />
-            Updating…
+            <i className="fa-solid fa-circle-notch fa-spin text-[8px] text-slate-400" aria-hidden="true" />
+            <span className="text-slate-500">Updating…</span>
           </>
         ) : isSoldOut ? (
           <>
-            <i className="fa-solid fa-circle-xmark text-[8px]" aria-hidden="true" />
-            Sold Out
+            <span className="h-1.5 w-1.5 rounded-full bg-rose-500 shrink-0" />
+            <span>Sold Out</span>
           </>
         ) : (
           <>
-            <i className="fa-solid fa-circle-check text-[8px]" aria-hidden="true" />
-            Available
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
+            <span>In Stock</span>
           </>
         )}
       </button>
@@ -254,7 +254,7 @@ export default function ListingsTable({
           </button>
         ),
       },
-      { key: 'availability', label: 'Availability', className: 'w-24 whitespace-nowrap' },
+      { key: 'availability', label: 'Stock', className: 'w-24 whitespace-nowrap' },
       { key: 'status',       label: 'Status',       className: 'w-24 whitespace-nowrap' },
       { key: 'action',       label: 'Action',       className: 'w-10 whitespace-nowrap text-right' },
     ],
@@ -395,17 +395,17 @@ export default function ListingsTable({
   const handleUpdateAvailability = async (listing, newStatus) => {
     if (listing.availabilityStatus === newStatus) return;
 
-    const actionText = newStatus === 'sold_out' ? 'Sold Out' : 'Available';
+    const actionText = newStatus === 'sold_out' ? 'Sold Out' : 'In Stock';
     const result = await Swal.fire({
       title: `Mark as ${actionText}?`,
       text: newStatus === 'sold_out'
         ? 'Are you sure you want to mark this listing as Sold Out?'
-        : 'Are you sure you want to mark this listing as Available?',
+        : 'Are you sure you want to mark this listing as In Stock?',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: newStatus === 'sold_out' ? '#ef4444' : '#10b981',
       cancelButtonColor: '#64748b',
-      confirmButtonText: `Yes, Mark ${actionText}`,
+      confirmButtonText: `Yes, Mark as ${actionText}`,
       cancelButtonText: 'Cancel',
       reverseButtons: true,
       customClass: {

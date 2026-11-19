@@ -9,12 +9,12 @@ const STATUS_CONFIG = {
   },
   approved: {
     label: 'Approved',
-    cls: 'bg-emerald-50 text-emerald-600 border-emerald-200/70',
-    icon: 'fa-circle-check',
+    cls: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
+    icon: 'fa-check',
   },
   'changes-required': {
-    label: 'Changes Required',
-    cls: 'bg-brand-orange/10 text-brand-orange border-brand-orange/25',
+    label: 'Changes Req.',
+    cls: 'bg-violet-50 text-violet-700 border-violet-200/70',
     icon: 'fa-pen-to-square',
   },
   cancelled: {
@@ -36,19 +36,19 @@ const STATUS_CONFIG = {
 
 const AVAILABILITY_STATUS_CONFIG = {
   available: {
-    label: 'Available',
-    cls: 'bg-emerald-50 text-emerald-600 border-emerald-200/70',
-    icon: 'fa-circle-check',
+    label: 'In Stock',
+    cls: 'bg-slate-50 text-slate-700 border-slate-200',
+    dot: 'bg-emerald-500',
   },
   sold_out: {
     label: 'Sold Out',
-    cls: 'bg-red-50 text-red-600 border-red-200/70',
-    icon: 'fa-circle-xmark',
+    cls: 'bg-rose-50 text-rose-700 border-rose-200',
+    dot: 'bg-rose-500',
   },
   inactive: {
     label: 'Inactive',
     cls: 'bg-slate-100 text-slate-500 border-slate-200',
-    icon: 'fa-pause-circle',
+    dot: 'bg-slate-400',
   },
 };
 
@@ -56,7 +56,7 @@ function availabilityStatusConfig(status) {
   return AVAILABILITY_STATUS_CONFIG[status] || {
     label: status || 'Unknown',
     cls: 'bg-slate-100 text-slate-600 border-slate-200',
-    icon: 'fa-circle-info',
+    dot: 'bg-slate-400',
   };
 }
 
@@ -64,9 +64,9 @@ export function AvailabilityBadge({ status, className = '' }) {
   const cfg = availabilityStatusConfig(status);
   return (
     <span
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold border capitalize whitespace-nowrap shadow-2xs ${cfg.cls} ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-semibold border capitalize whitespace-nowrap shadow-2xs ${cfg.cls} ${className}`}
     >
-      <i className={`fa-solid ${cfg.icon} text-[8px]`} aria-hidden="true" />
+      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dot || 'bg-slate-400'}`} aria-hidden="true" />
       {cfg.label}
     </span>
   );
