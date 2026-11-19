@@ -1,53 +1,60 @@
 import Skeleton from './Skeleton';
-import SkeletonButton from './SkeletonButton';
-import SkeletonImage from './SkeletonImage';
 
 /**
- * ListingCardSkeleton — mirrors the app's listing card layout
- * (image, title, subtitle, price, location, action). Used wherever listing
- * cards load from an API.
+ * ListingCardSkeleton — mirrors the compact ListingCard:
+ * 16:9 image aspect ratio, top badges & action buttons,
+ * category pill + date, title, location, spec pills,
+ * and full-width single-line action button.
  */
-export function ListingCardSkeleton({ horizontal = false, className = '' }) {
-  if (horizontal) {
-    return (
-      <div className={`bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-card ${className}`}>
-        <div className="flex">
-          <SkeletonImage className="w-32 h-32 rounded-none" fallbackIcon="fa-image" />
-          <div className="flex-1 p-4 space-y-3">
-            <Skeleton className="h-4 w-3/4" rounded="rounded-md" />
-            <Skeleton className="h-3 w-full" rounded="rounded" />
-            <Skeleton className="h-3 w-1/2" rounded="rounded" />
-            <div className="flex justify-between items-center pt-1">
-              <Skeleton className="h-3.5 w-20" rounded="rounded" />
-              <SkeletonButton className="h-8 w-16" />
-            </div>
-          </div>
+export function ListingCardSkeleton({ className = '' }) {
+  return (
+    <div className={`bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-2xs flex flex-col h-full ${className}`}>
+      {/* ── Image Container (Compact 16:9) ── */}
+      <div className="relative aspect-[16/9] bg-slate-100 shrink-0">
+        <Skeleton className="h-full w-full rounded-none" />
+
+        {/* Top-Left Badges */}
+        <div className="absolute left-2.5 top-2.5 flex items-center gap-1 z-10">
+          <Skeleton className="h-5 w-12 rounded-md" />
+        </div>
+
+        {/* Top-Right Action Buttons */}
+        <div className="absolute right-2.5 top-2.5 z-10 flex items-center gap-1">
+          <Skeleton className="h-7 w-7 rounded-full" />
+          <Skeleton className="h-7 w-7 rounded-full" />
         </div>
       </div>
-    );
-  }
 
-  return (
-    <div className={`bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-card ${className}`}>
-      {/* Image */}
-      <Skeleton className="h-40 w-full rounded-none" />
-
-      {/* Body */}
-      <div className="p-4 space-y-3">
-        <Skeleton className="h-4 w-3/4" rounded="rounded-md" />
-        <Skeleton className="h-3 w-full" rounded="rounded" />
-        <Skeleton className="h-3 w-2/3" rounded="rounded" />
-
-        <div className="flex items-center justify-between pt-2">
-          <Skeleton className="h-4 w-20" rounded="rounded" />
-          <Skeleton className="h-4 w-14" rounded="rounded" />
+      {/* ── Card Body ── */}
+      <div className="p-3 sm:p-3.5 flex flex-col flex-1 gap-1.5">
+        {/* Category Pill & Date */}
+        <div className="flex items-center justify-between gap-2">
+          <Skeleton className="h-4.5 w-16 rounded-md" />
+          <Skeleton className="h-3 w-14 rounded" />
         </div>
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-3 w-16" rounded="rounded" />
-          <Skeleton className="h-3 w-16" rounded="rounded" />
+
+        {/* Title */}
+        <Skeleton className="h-4 w-4/5 rounded-md mt-0.5" />
+
+        {/* Location */}
+        <div className="flex items-center gap-1">
+          <Skeleton className="h-3 w-3 rounded-full shrink-0" />
+          <Skeleton className="h-3 w-3/5 rounded" />
+        </div>
+
+        {/* Specification Tags */}
+        <div className="flex flex-wrap items-center gap-1 pt-0.5">
+          <Skeleton className="h-5 w-18 rounded-md" />
+          <Skeleton className="h-5 w-20 rounded-md" />
+        </div>
+
+        {/* Card Footer: Full-Width 1-Line Action Button */}
+        <div className="mt-auto pt-2.5 border-t border-slate-100">
+          <Skeleton className="h-8 w-full rounded-xl" />
         </div>
       </div>
     </div>
   );
 }
+
 export default ListingCardSkeleton;

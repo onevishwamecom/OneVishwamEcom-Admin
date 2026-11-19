@@ -9,12 +9,28 @@
 
 export const CATEGORY_TO_TYPE = {
   'real-estate': 'properties',
+  property: 'properties',
+  properties: 'properties',
   vehicle: 'vehicles',
+  vehicles: 'vehicles',
+  automobile: 'vehicles',
+  automobiles: 'vehicles',
   grocery: 'groceries',
+  groceries: 'groceries',
   garment: 'garments',
+  garments: 'garments',
   jewellery: 'jewellery',
   finance: 'finance',
   service: 'services',
+  services: 'services',
+  electronic: 'electronics',
+  electronics: 'electronics',
+  'consumer-electronics': 'electronics',
+  'consumer_electronics': 'electronics',
+  bedding: 'bedding',
+  'bedding-comfort': 'bedding',
+  'bedding_comfort': 'bedding',
+  comfort: 'bedding',
 };
 
 export const TYPE_TO_CATEGORY = Object.fromEntries(
@@ -44,7 +60,7 @@ export const CATEGORIES = [
   },
   {
     id: 'vehicles',
-    label: 'Vehicles',
+    label: 'Automobiles',
     icon: 'fa-car',
     gradient: 'from-brand-gold to-brand-gold/70',
     fields: [
@@ -56,6 +72,33 @@ export const CATEGORIES = [
       { key: 'fuelType', label: 'Fuel Type' },
       { key: 'transmission', label: 'Transmission' },
       { key: 'kmDriven', label: 'KM Driven' },
+    ],
+  },
+  {
+    id: 'electronics',
+    label: 'Consumer Electronics',
+    icon: 'fa-tv',
+    gradient: 'from-teal-500 to-teal-600',
+    fields: [
+      { key: 'brand', label: 'Brand' },
+      { key: 'model', label: 'Model' },
+      { key: 'category', label: 'Category' },
+      { key: 'subcategory', label: 'Subcategory' },
+      { key: 'condition', label: 'Condition' },
+      { key: 'warranty', label: 'Warranty' },
+    ],
+  },
+  {
+    id: 'bedding',
+    label: 'Bedding & Comfort',
+    icon: 'fa-bed',
+    gradient: 'from-emerald-500 to-teal-600',
+    fields: [
+      { key: 'brand', label: 'Brand' },
+      { key: 'material', label: 'Material' },
+      { key: 'size', label: 'Size' },
+      { key: 'firmness', label: 'Firmness' },
+      { key: 'warranty', label: 'Warranty' },
     ],
   },
   {
@@ -118,7 +161,8 @@ export const CATEGORIES = [
 ];
 
 export function getCategoryById(categoryId) {
-  return CATEGORIES.find((c) => c.id === categoryId) || null;
+  const norm = CATEGORY_TO_TYPE[categoryId] || categoryId;
+  return CATEGORIES.find((c) => c.id === norm || c.id === categoryId) || null;
 }
 
 export function getMockCategories() {

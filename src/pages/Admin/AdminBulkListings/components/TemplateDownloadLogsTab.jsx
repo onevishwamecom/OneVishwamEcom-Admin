@@ -48,9 +48,11 @@ export default function TemplateDownloadLogsTab({
           >
             <option value="all">All Categories</option>
             <option value="properties">Properties</option>
-            <option value="vehicle">Vehicles</option>
-            <option value="grocery">Groceries</option>
-            <option value="garment">Garments</option>
+            <option value="vehicles">Automobiles</option>
+            <option value="electronics">Consumer Electronics</option>
+            <option value="bedding">Bedding & Comfort</option>
+            <option value="groceries">Groceries</option>
+            <option value="garments">Garments</option>
             <option value="jewellery">Jewellery</option>
           </select>
 

@@ -5,7 +5,7 @@ import { adminApi } from '../../../../api/adminData';
 
 const SECTOR_META = {
   properties: { label: 'Properties', icon: 'fa-house-chimney', color: 'from-blue-500 to-indigo-600', badge: 'bg-blue-50 text-blue-700 border-blue-200' },
-  vehicles: { label: 'Vehicles', icon: 'fa-car', color: 'from-amber-500 to-orange-600', badge: 'bg-amber-50 text-amber-700 border-amber-200' },
+  automobiles: { label: 'Automobiles', icon: 'fa-car', color: 'from-amber-500 to-orange-600', badge: 'bg-amber-50 text-amber-700 border-amber-200' },
   electronics: { label: 'Electronics', icon: 'fa-tv', color: 'from-rose-500 to-red-600', badge: 'bg-rose-50 text-rose-700 border-rose-200' },
   garments: { label: 'Garments', icon: 'fa-shirt', color: 'from-purple-500 to-pink-600', badge: 'bg-purple-50 text-purple-700 border-purple-200' },
   jewellery: { label: 'Jewellery', icon: 'fa-gem', color: 'from-emerald-500 to-teal-600', badge: 'bg-emerald-50 text-emerald-700 border-emerald-200' },

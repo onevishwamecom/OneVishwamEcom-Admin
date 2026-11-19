@@ -292,7 +292,14 @@ export default function AdminBulkListings() {
   const filteredBatches = useMemo(() => {
     let list = batches;
     if (batchCategoryFilter !== 'all') {
-      list = list.filter((b) => (b.category || '').toLowerCase() === batchCategoryFilter.toLowerCase());
+      list = list.filter((b) => {
+        const cat = (b.category || '').toLowerCase();
+        const f = batchCategoryFilter.toLowerCase();
+        if (f === 'vehicles') return cat === 'vehicles' || cat === 'vehicle' || cat === 'automobile' || cat === 'automobiles';
+        if (f === 'groceries') return cat === 'groceries' || cat === 'grocery';
+        if (f === 'garments') return cat === 'garments' || cat === 'garment';
+        return cat === f;
+      });
     }
     if (batchSearch.trim()) {
       const q = batchSearch.trim().toLowerCase();
@@ -395,9 +402,11 @@ export default function AdminBulkListings() {
               >
                 <option value="all">All Categories</option>
                 <option value="properties">Properties</option>
-                <option value="vehicle">Vehicles</option>
-                <option value="grocery">Groceries</option>
-                <option value="garment">Garments</option>
+                <option value="vehicles">Automobiles</option>
+                <option value="electronics">Consumer Electronics</option>
+                <option value="bedding">Bedding & Comfort</option>
+                <option value="groceries">Groceries</option>
+                <option value="garments">Garments</option>
                 <option value="jewellery">Jewellery</option>
               </select>
             </div>

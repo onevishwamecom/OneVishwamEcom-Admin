@@ -1,3 +1,5 @@
+@import './styles/tokens.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,10 +8,10 @@
 
 :root {
   color-scheme: light;
-  --brand-blue: #4896E6;
-  --brand-gold: #EBBA44;
-  --brand-orange: #E47732;
-  --brand-navy: #0f172a;
+  --brand-blue: #134e8f;
+  --brand-gold: #f59e0b;
+  --brand-orange: #ea580c;
+  --brand-navy: #0f233a;
   --glass-bg: rgba(255, 255, 255, 0.72);
   --glass-border: rgba(255, 255, 255, 0.18);
 
@@ -215,6 +217,66 @@ body {
     animation: skeletonPulse 1.6s ease-in-out infinite;
   }
 
+  /* ═══ Auto-Adapting Skeleton Mask ═══ */
+  .skeleton-mask,
+  [data-skeleton="true"] {
+    pointer-events: none !important;
+    user-select: none !important;
+    cursor: default !important;
+  }
+
+  .skeleton-mask *,
+  [data-skeleton="true"] * {
+    user-select: none !important;
+  }
+
+  /* Make text transparent and give text wrappers a shimmer bar */
+  .skeleton-mask p,
+  .skeleton-mask h1,
+  .skeleton-mask h2,
+  .skeleton-mask h3,
+  .skeleton-mask h4,
+  .skeleton-mask h5,
+  .skeleton-mask h6,
+  .skeleton-mask a:not([class*="rounded"]):not([class*="btn"]):not([class*="w-"]):not([class*="h-"]),
+  .skeleton-mask span:not([class*="rounded"]):not([class*="w-"]):not([class*="h-"]) {
+    color: transparent !important;
+    background: linear-gradient(
+      90deg,
+      rgba(226, 232, 240, 0.6) 25%,
+      rgba(241, 245, 249, 0.95) 37%,
+      rgba(226, 232, 240, 0.6) 63%
+    ) !important;
+    background-size: 200% 100% !important;
+    animation: shimmer 1.8s infinite linear !important;
+    border-radius: 4px;
+    display: inline-block;
+  }
+
+  /* Buttons, Badges, Pills, Images, and Icon containers */
+  .skeleton-mask button,
+  .skeleton-mask img,
+  .skeleton-mask svg,
+  .skeleton-mask i,
+  .skeleton-mask [class*="rounded-full"],
+  .skeleton-mask [class*="rounded-xl"],
+  .skeleton-mask [class*="rounded-lg"],
+  .skeleton-mask [class*="rounded-md"],
+  .skeleton-mask .status-pill,
+  .skeleton-mask .category-badge {
+    color: transparent !important;
+    border-color: rgba(226, 232, 240, 0.8) !important;
+    box-shadow: none !important;
+    background: linear-gradient(
+      90deg,
+      rgba(226, 232, 240, 0.6) 25%,
+      rgba(241, 245, 249, 0.95) 37%,
+      rgba(226, 232, 240, 0.6) 63%
+    ) !important;
+    background-size: 200% 100% !important;
+    animation: shimmer 1.8s infinite linear !important;
+  }
+
   /* Reduced motion: disable shimmer/pulse, keep a static placeholder */
   @media (prefers-reduced-motion: reduce) {
     .shimmer,
@@ -273,7 +335,7 @@ body {
 
 /* Sidebar active glow */
 .sidebar-active-glow {
-  box-shadow: inset 3px 0 0 #4896E6, 0 0 12px rgba(72, 150, 230, 0.08);
+  box-shadow: inset 3px 0 0 #134e8f, 0 0 12px rgba(19, 78, 143, 0.15);
 }
 
 /* Input focus glow */

@@ -3,25 +3,31 @@ import { Link } from 'react-router-dom';
 
 const VARIANTS = {
   primary:
-    'bg-brand-blue text-white hover:bg-blue-700 active:bg-blue-800 border border-transparent shadow-xs focus:ring-brand-blue/30',
+    'bg-brand-blue text-white hover:bg-brand-blue-hover active:bg-brand-blue-hover/90 border border-transparent shadow-xs focus:ring-brand-blue/30 font-bold',
+  action:
+    'bg-[#90dafc] hover:bg-[#78d0f8] active:bg-[#68c8f5] text-[#020617] border border-[#70caf5] shadow-xs focus:ring-[#90dafc]/30 font-black',
   gold:
-    'bg-brand-gold text-brand-navy hover:bg-amber-400 active:bg-amber-500 border border-transparent shadow-xs focus:ring-brand-gold/30',
+    'bg-[#90dafc] hover:bg-[#78d0f8] active:bg-[#68c8f5] text-[#020617] border border-[#70caf5] shadow-xs focus:ring-[#90dafc]/30 font-black',
+  'gold-soft':
+    'bg-sky-50 text-brand-blue hover:bg-sky-100 active:bg-sky-200 border border-sky-200/80 shadow-2xs focus:ring-brand-blue/30 font-bold',
   emerald:
-    'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 border border-transparent shadow-xs focus:ring-emerald-500/30',
+    'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 border border-transparent shadow-xs focus:ring-emerald-500/30 font-bold',
   'emerald-outline':
-    'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-300 shadow-xs focus:ring-emerald-400/30',
+    'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-300 shadow-xs focus:ring-emerald-400/30 font-bold',
   secondary:
-    'bg-slate-100 text-slate-700 hover:bg-slate-200 active:bg-slate-300 border border-slate-200/80 shadow-2xs focus:ring-slate-300/30',
+    'bg-white text-slate-700 hover:bg-slate-50 hover:text-brand-blue active:bg-slate-100 border border-slate-200 shadow-2xs focus:ring-brand-blue/20 font-semibold',
   outline:
-    'bg-white text-slate-700 hover:bg-slate-50 active:bg-slate-100 border border-slate-200 shadow-2xs focus:ring-slate-200/50',
+    'bg-white text-slate-700 hover:bg-blue-50/60 hover:text-brand-blue hover:border-brand-blue/30 active:bg-blue-50 border border-slate-200 shadow-2xs focus:ring-brand-blue/20 font-semibold',
   danger:
-    'bg-rose-600 text-white hover:bg-rose-700 active:bg-rose-800 border border-transparent shadow-xs focus:ring-rose-500/30',
+    'bg-rose-600 text-white hover:bg-rose-700 active:bg-rose-800 border border-transparent shadow-xs focus:ring-rose-500/30 font-bold',
   'danger-soft':
-    'bg-rose-50 text-rose-600 hover:bg-rose-100 active:bg-rose-200 border border-rose-200/80 shadow-2xs focus:ring-rose-300/30',
+    'bg-rose-50 text-rose-600 hover:bg-rose-100 active:bg-rose-200 border border-rose-200/80 shadow-2xs focus:ring-rose-300/30 font-semibold',
   ghost:
-    'bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-transparent focus:ring-slate-200/30',
+    'bg-transparent text-slate-600 hover:bg-blue-50/60 hover:text-brand-blue border border-transparent focus:ring-brand-blue/20 font-semibold',
   blue:
-    'bg-blue-50 text-brand-blue hover:bg-blue-100 active:bg-blue-200 border border-blue-200/80 shadow-2xs focus:ring-blue-300/30',
+    'bg-blue-50 text-brand-blue hover:bg-blue-100 active:bg-blue-200 border border-blue-200/80 shadow-2xs focus:ring-brand-blue/30 font-bold',
+  dark:
+    'bg-brand-navy text-white hover:bg-brand-blue active:bg-brand-blue-hover border border-slate-700/50 shadow-xs focus:ring-brand-blue/30 font-bold',
 };
 
 const SIZES = {

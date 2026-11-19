@@ -1,6 +1,6 @@
 const SECTOR_META = {
   properties: { label: 'Properties & Real Estate', icon: 'fa-house-chimney', color: 'from-blue-600 to-indigo-700', bg: 'bg-blue-500', pill: 'bg-blue-50 text-blue-700 border-blue-200' },
-  vehicles: { label: 'Vehicles & Automobiles', icon: 'fa-car', color: 'from-amber-500 to-orange-600', bg: 'bg-amber-500', pill: 'bg-amber-50 text-amber-700 border-amber-200' },
+  automobiles: { label: 'Automobiles', icon: 'fa-car', color: 'from-amber-500 to-orange-600', bg: 'bg-amber-500', pill: 'bg-amber-50 text-amber-700 border-amber-200' },
   electronics: { label: 'Electronics & Appliances', icon: 'fa-tv', color: 'from-rose-500 to-red-600', bg: 'bg-rose-500', pill: 'bg-rose-50 text-rose-700 border-rose-200' },
   garments: { label: 'Fashion & Garments', icon: 'fa-shirt', color: 'from-purple-500 to-pink-600', bg: 'bg-purple-500', pill: 'bg-purple-50 text-purple-700 border-purple-200' },
   jewellery: { label: 'Jewellery & Gold', icon: 'fa-gem', color: 'from-emerald-500 to-teal-600', bg: 'bg-emerald-500', pill: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
@@ -37,7 +37,23 @@ function timeAgo(dateStr) {
 export default function InterestInsights({ customer }) {
   if (!customer) return null;
 
-  const interests = customer.interests || [];
+  const rawInterests = customer.interests || [];
+  // Consolidate duplicate or variant sector keys (e.g. vehicles, vehicle, automobile, automobiles -> automobiles)
+  const consolidatedMap = new Map();
+  rawInterests.forEach((item) => {
+    const rawCat = String(item.category || 'general').trim().toLowerCase();
+    const canonCat = (rawCat === 'vehicle' || rawCat === 'vehicles' || rawCat === 'automobile' || rawCat === 'automobiles') ? 'automobiles' : rawCat;
+    if (consolidatedMap.has(canonCat)) {
+      const existing = consolidatedMap.get(canonCat);
+      existing.viewCount = (existing.viewCount || 0) + (item.viewCount || 0);
+      if (item.lastVisitedAt && (!existing.lastVisitedAt || new Date(item.lastVisitedAt) > new Date(existing.lastVisitedAt))) {
+        existing.lastVisitedAt = item.lastVisitedAt;
+      }
+    } else {
+      consolidatedMap.set(canonCat, { ...item, category: canonCat });
+    }
+  });
+  const interests = Array.from(consolidatedMap.values());
   const browsingHistory = customer.browsingHistory || [];
 
   const primarySector = (customer.primaryInterest || interests[0]?.category || 'properties').toLowerCase();
