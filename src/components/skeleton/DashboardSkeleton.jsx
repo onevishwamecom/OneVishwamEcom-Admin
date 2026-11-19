@@ -16,13 +16,12 @@ export function DashboardSkeleton({ className = '' }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="bg-white rounded-2xl border border-slate-100 shadow-card p-5">
-            <div className="flex items-center gap-3 mb-4">
-              <Skeleton className="h-10 w-10" rounded="rounded-xl" />
+          <div key={i} className="bg-white rounded-2xl border border-slate-100 shadow-card p-5 flex items-center gap-4">
+            <Skeleton className="h-12 w-12 rounded-2xl shrink-0" />
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <Skeleton className="h-8 w-16" rounded="rounded-lg" />
               <Skeleton className="h-3 w-24" rounded="rounded" />
             </div>
-            <Skeleton className="h-7 w-16 mb-2" rounded="rounded-lg" />
-            <Skeleton className="h-3 w-20" rounded="rounded" />
           </div>
         ))}
       </div>

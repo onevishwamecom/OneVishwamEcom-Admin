@@ -156,7 +156,7 @@ function AdminLayout() {
       text: 'You will be returned to the admin login page.',
       icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: '#2563eb',
+      confirmButtonColor: '#134e8f',
       confirmButtonText: 'Yes, logout',
       cancelButtonText: 'Cancel',
       customClass: {

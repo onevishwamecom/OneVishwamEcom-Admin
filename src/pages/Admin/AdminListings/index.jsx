@@ -27,7 +27,14 @@ function ListingsSkeleton() {
           <Skeleton className="h-8 flex-1" rounded="rounded-md" />
           <Skeleton className="h-8 w-20" rounded="rounded-md" />
         </div>
-        <SkeletonTable rows={8} columns={7} className="border-0 shadow-none" />
+        <SkeletonTable
+          rows={8}
+          columns={7}
+          showIndex={true}
+          action={true}
+          headers={['Listing', 'Contributor', 'Category', 'Location', 'Price', 'Submitted', 'Status']}
+          className="border-0 shadow-none"
+        />
       </div>
     </div>
   );

@@ -19,4 +19,5 @@ export { default as ActivitySkeleton } from './ActivitySkeleton';
 export { default as ProfileSkeleton } from './ProfileSkeleton';
 export { default as NotificationSkeleton } from './NotificationSkeleton';
 export { default as ErrorState } from './ErrorState';
+export { default as SkeletonMask } from './SkeletonMask';
 export { SkeletonLoading } from './SkeletonLoading';

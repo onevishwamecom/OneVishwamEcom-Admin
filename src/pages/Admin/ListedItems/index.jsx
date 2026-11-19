@@ -21,13 +21,20 @@ function ListedItemsSkeleton() {
       </div>
 
       {/* Category pills skeleton */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
         {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-9 w-28 shrink-0" rounded="rounded-full" />
+          <Skeleton key={i} className="h-9 w-28 shrink-0" rounded="rounded-xl" />
         ))}
       </div>
 
-      <SkeletonTable rows={8} columns={6} />
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-card overflow-hidden">
+        <ListingTable
+          loading={true}
+          skeletonRows={8}
+          columns={['index', 'product', 'category', 'price', 'location', 'date', 'actions']}
+          portal="admin"
+        />
+      </div>
     </div>
   );
 }
@@ -246,7 +253,7 @@ export default function ListedItems() {
             items={pageItems}
             columns={['index', 'product', 'category', 'price', 'location', 'date', 'actions']}
             portal="admin"
-            getItemLink={(l) => `/admin/listings/${l._type}/${l._id || l.id}`}
+            getItemLink={(l) => `/admin/listings/${l._type}/${l._id || l.id}?fromPage=${effectivePage}&fromPath=${encodeURIComponent(`${location.pathname}${location.search}`)}`}
             onDelete={handleDelete}
             responsiveMode="scroll"
             currentPage={effectivePage}
