@@ -295,7 +295,7 @@ function AdminLayout() {
       >
         {/* Top bar */}
         <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-2xs">
-          <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8 ml-12 lg:ml-0">
+          <div className="flex h-16 items-center justify-between px-4 sm:px-6 ml-12 lg:ml-0">
             <div>
               <h1 className="text-lg font-black text-slate-900 tracking-tight">{pageTitle}</h1>
               <p className="text-xs font-medium text-slate-500 hidden sm:block">

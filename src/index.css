@@ -16,8 +16,8 @@
   --glass-border: rgba(255, 255, 255, 0.18);
 
   /* ═══ Centralized page layout tokens ═══ */
-  --page-padding-x: clamp(1rem, 3vw, 2rem);
-  --page-padding-y: clamp(1rem, 2.5vw, 2rem);
+  --page-padding-x: clamp(1rem, 2vw, 1.5rem);
+  --page-padding-y: clamp(1rem, 2vw, 1.5rem);
   --page-section-gap: 1.25rem;
   --page-max-width: 100%;
   --page-header-gap: 1rem;

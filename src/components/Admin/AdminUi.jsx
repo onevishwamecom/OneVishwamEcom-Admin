@@ -64,9 +64,9 @@ export function AvailabilityBadge({ status, className = '' }) {
   const cfg = availabilityStatusConfig(status);
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold border capitalize whitespace-nowrap shadow-xs ${cfg.cls} ${className}`}
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold border capitalize whitespace-nowrap shadow-2xs ${cfg.cls} ${className}`}
     >
-      <i className={`fa-solid ${cfg.icon} text-[9px]`} aria-hidden="true" />
+      <i className={`fa-solid ${cfg.icon} text-[8px]`} aria-hidden="true" />
       {cfg.label}
     </span>
   );
@@ -84,9 +84,9 @@ export function StatusBadge({ status, className = '' }) {
   const cfg = statusConfig(status);
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold border capitalize whitespace-nowrap shadow-xs ${cfg.cls} ${className}`}
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold border capitalize whitespace-nowrap shadow-2xs ${cfg.cls} ${className}`}
     >
-      <i className={`fa-solid ${cfg.icon} text-[9px]`} aria-hidden="true" />
+      <i className={`fa-solid ${cfg.icon} text-[8px]`} aria-hidden="true" />
       {cfg.label}
     </span>
   );
@@ -277,11 +277,11 @@ export function DataTable({
   return (
     <div className={`bg-white rounded-2xl border border-slate-100 shadow-card overflow-hidden max-w-full ${className}`}>
       <div className="overflow-x-auto touch-pan-y w-full max-w-full">
-        <table className="min-w-full text-left text-sm border-collapse">
+        <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="text-xs uppercase tracking-wider text-slate-400 border-b-2 border-slate-100">
+            <tr className="text-[10px] sm:text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-200/80 bg-slate-50/80">
               <th
-                className="px-2 py-2 font-semibold text-[11px] whitespace-nowrap w-8 bg-slate-50 text-center text-slate-400"
+                className="px-2 py-2 font-bold text-center w-7 text-slate-400 select-none"
                 aria-label="Row number"
               >
                 #
@@ -290,7 +290,7 @@ export function DataTable({
                 <th
                   key={col.key}
                   className={[
-                    'px-2.5 sm:px-3 py-2 font-semibold text-[11px] uppercase tracking-wider text-slate-400 whitespace-nowrap bg-slate-50',
+                    'px-2 py-2 font-bold uppercase tracking-wider text-slate-400 whitespace-nowrap',
                     col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : '',
                     col.className || '',
                   ].join(' ')}
@@ -312,16 +312,16 @@ export function DataTable({
                 const cells = renderRow(row, ri);
                 const isEvenRow = ri % 2 === 1;
                 const customRowClass = getRowClassName ? getRowClassName(row, ri) : '';
-                const rowBg = customRowClass || (isEvenRow ? 'bg-slate-50/60' : 'bg-white');
+                const rowBg = customRowClass || (isEvenRow ? 'bg-slate-50/40' : 'bg-white');
                 return (
                   <tr
                     key={row._id || row.id || ri}
                     className={[
-                      'border-b border-slate-100 last:border-0 transition-colors cursor-default group hover:bg-slate-50/50',
+                      'border-b border-slate-100 last:border-0 transition-colors cursor-default group hover:bg-blue-50/30',
                       rowBg,
                     ].join(' ')}
                   >
-                    <td className="px-2 py-3 text-center text-[11px] font-bold text-slate-300 select-none tabular-nums bg-slate-50">
+                    <td className="px-1.5 py-1.5 text-center text-[10px] sm:text-[11px] font-semibold text-slate-400 select-none tabular-nums bg-slate-50/50 w-7">
                       {startIndex + ri + 1}
                     </td>
                     {cells.map((cell, ci) => {
@@ -331,7 +331,7 @@ export function DataTable({
                           key: cell.key ?? ci,
                           ...restProps,
                           className: [
-                            'px-2.5 sm:px-3 py-2.5 text-xs align-middle',
+                            'px-2 py-1.5 text-xs align-middle',
                             cellClass,
                           ].join(' '),
                         });
@@ -339,7 +339,7 @@ export function DataTable({
                       return (
                         <td
                           key={cell?.key ?? ci}
-                          className="px-2.5 sm:px-3 py-2.5 text-xs align-middle text-slate-700"
+                          className="px-2 py-1.5 text-xs align-middle text-slate-700"
                         >
                           {cell}
                         </td>

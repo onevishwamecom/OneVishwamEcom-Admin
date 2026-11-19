@@ -21,23 +21,23 @@ export function SkeletonTable({
 
   return (
     <SkeletonLoading label="Loading table data…">
-      <div className={`bg-white rounded-2xl border border-slate-100 shadow-card overflow-hidden ${className}`}>
+      <div className={`bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden ${className}`}>
         <div className="overflow-x-auto">
-          <table className="min-w-full text-left text-sm border-collapse">
+          <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-100 text-[10px] uppercase tracking-wider font-extrabold text-slate-400">
+              <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[10px] uppercase tracking-wider font-extrabold text-slate-400">
                 {checkbox && (
-                  <th className="px-3.5 py-2 w-10">
-                    <Skeleton className="h-4 w-4" rounded="rounded" />
+                  <th className="px-2 py-2 w-8">
+                    <Skeleton className="h-3.5 w-3.5" rounded="rounded" />
                   </th>
                 )}
                 {showIndex && (
-                  <th className="px-3.5 py-2 w-12 text-center font-extrabold">
+                  <th className="px-1.5 py-2 w-7 text-center font-extrabold">
                     #
                   </th>
                 )}
                 {Array.from({ length: columns }).map((_, ci) => (
-                  <th key={ci} className="px-3.5 py-2 font-extrabold text-slate-400">
+                  <th key={ci} className="px-2 py-2 font-extrabold text-slate-400">
                     {headers?.[ci] ? (
                       <span>{headers[ci]}</span>
                     ) : (
@@ -46,9 +46,9 @@ export function SkeletonTable({
                   </th>
                 ))}
                 {action && (
-                  <th className="px-3.5 py-2 text-right">
+                  <th className="px-2 py-2 text-right w-10">
                     <span className="sr-only">Actions</span>
-                    <Skeleton className="h-3 w-12 ml-auto" rounded="rounded" />
+                    <Skeleton className="h-3 w-6 ml-auto" rounded="rounded" />
                   </th>
                 )}
               </tr>

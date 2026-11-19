@@ -343,7 +343,7 @@ function ListingTable({
               {normalizedColumns.map((col) => (
                 <th
                   key={col.key}
-                  className={`px-3.5 py-2 ${col.className || ''} ${col.headerClassName || ''}`}
+                  className={`px-2.5 py-2 ${col.className || ''} ${col.headerClassName || ''}`}
                 >
                   {col.label}
                 </th>
@@ -358,7 +358,7 @@ function ListingTable({
                   {normalizedColumns.map((col) => {
                     const cellRenderer = col.render || defaultRenderers[col.key];
                     return (
-                      <td key={col.key} className={`px-3.5 py-2 ${col.className || ''}`}>
+                      <td key={col.key} className={`px-2.5 py-1.5 ${col.className || ''}`}>
                         {cellRenderer ? cellRenderer(item, idx) : item[col.key] || '—'}
                       </td>
                     );

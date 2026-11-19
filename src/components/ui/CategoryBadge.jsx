@@ -5,16 +5,16 @@ import React from 'react';
  * Canonical categories across all portals without duplicates.
  */
 export const CATEGORY_CONFIG = {
-  properties: { label: 'Properties', icon: 'fa-house-chimney', color: 'bg-blue-50 text-brand-blue border-blue-100' },
-  automobiles: { label: 'Automobiles', icon: 'fa-car-side', color: 'bg-amber-50 text-amber-700 border-amber-200' },
-  electronics: { label: 'Consumer Electronics', icon: 'fa-tv', color: 'bg-teal-50 text-teal-700 border-teal-200' },
-  comfort: { label: 'Bedding & Comfort', icon: 'fa-bed', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  bedding: { label: 'Bedding & Comfort', icon: 'fa-bed', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  groceries: { label: 'Groceries', icon: 'fa-basket-shopping', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  garments: { label: 'Garments', icon: 'fa-shirt', color: 'bg-purple-50 text-purple-700 border-purple-200' },
-  jewellery: { label: 'Jewellery', icon: 'fa-gem', color: 'bg-cyan-50 text-cyan-700 border-cyan-200' },
-  finance: { label: 'Finance', icon: 'fa-building-columns', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
-  services: { label: 'Services', icon: 'fa-wrench', color: 'bg-slate-100 text-slate-700 border-slate-200' },
+  properties: { label: 'Properties', shortLabel: 'Property', icon: 'fa-house-chimney', color: 'bg-blue-50 text-brand-blue border-blue-100' },
+  automobiles: { label: 'Automobiles', shortLabel: 'Vehicles', icon: 'fa-car-side', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+  electronics: { label: 'Consumer Electronics', shortLabel: 'Electronics', icon: 'fa-tv', color: 'bg-teal-50 text-teal-700 border-teal-200' },
+  comfort: { label: 'Bedding & Comfort', shortLabel: 'Bedding', icon: 'fa-bed', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  bedding: { label: 'Bedding & Comfort', shortLabel: 'Bedding', icon: 'fa-bed', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  groceries: { label: 'Groceries', shortLabel: 'Grocery', icon: 'fa-basket-shopping', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  garments: { label: 'Garments', shortLabel: 'Garments', icon: 'fa-shirt', color: 'bg-purple-50 text-purple-700 border-purple-200' },
+  jewellery: { label: 'Jewellery', shortLabel: 'Jewellery', icon: 'fa-gem', color: 'bg-cyan-50 text-cyan-700 border-cyan-200' },
+  finance: { label: 'Finance', shortLabel: 'Finance', icon: 'fa-building-columns', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+  services: { label: 'Services', shortLabel: 'Services', icon: 'fa-wrench', color: 'bg-slate-100 text-slate-700 border-slate-200' },
 };
 
 /**
@@ -66,6 +66,7 @@ export function normalizeCategoryKey(category) {
 
 /**
  * Reusable CategoryBadge with icon box and label matching screenshot design.
+ * Supports compact mode for dense desktop data tables with zero horizontal scroll.
  */
 export function CategoryBadge({
   category = 'properties',
@@ -73,37 +74,45 @@ export function CategoryBadge({
   icon,
   className = '',
   showIconBox = true,
+  compact = false,
   cfgMap,
 }) {
   const key = normalizeCategoryKey(category);
   const cfg = cfgMap?.[key] || CATEGORY_CONFIG[key] || {
     label: label || category || 'General',
+    shortLabel: label || category || 'General',
     icon: icon || 'fa-box-open',
     color: 'bg-blue-50 text-brand-blue border-blue-100',
   };
 
-  const displayLabel = label || cfg.label;
+  const displayLabel = label || (compact && cfg.shortLabel ? cfg.shortLabel : cfg.label);
   const displayIcon = icon || cfg.icon;
 
   if (!showIconBox) {
     return (
       <span
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${cfg.color} ${className}`}
+        className={`inline-flex items-center gap-1.5 ${
+          compact ? 'px-2 py-0.5 text-[11px]' : 'px-2.5 py-1 text-xs'
+        } rounded-lg font-semibold border ${cfg.color} ${className}`}
       >
-        <i className={`fa-solid ${displayIcon} text-[11px]`} />
+        <i className={`fa-solid ${displayIcon} ${compact ? 'text-[10px]' : 'text-[11px]'}`} />
         <span>{displayLabel}</span>
       </span>
     );
   }
 
   return (
-    <div className={`flex items-center gap-1.5 whitespace-nowrap ${className}`}>
+    <div className={`flex items-center ${compact ? 'gap-1' : 'gap-1.5'} whitespace-nowrap ${className}`}>
       <span
-        className={`w-6 h-6 rounded-md border flex items-center justify-center ${cfg.color} shrink-0`}
+        className={`${
+          compact ? 'w-5 h-5 rounded' : 'w-6 h-6 rounded-md'
+        } border flex items-center justify-center ${cfg.color} shrink-0`}
       >
-        <i className={`fa-solid ${displayIcon} text-[10px]`} />
+        <i className={`fa-solid ${displayIcon} ${compact ? 'text-[9px]' : 'text-[10px]'}`} />
       </span>
-      <span className="text-xs font-semibold text-slate-700">{displayLabel}</span>
+      <span className={`${compact ? 'text-[11px]' : 'text-xs'} font-semibold text-slate-700 truncate max-w-[85px]`}>
+        {displayLabel}
+      </span>
     </div>
   );
 }

@@ -8,15 +8,15 @@ import CategoryBadge, { normalizeCategoryKey } from '../../../../components/ui/C
 import { adminApi } from '../../../../api/adminData';
 
 const COLUMNS = [
-  { key: 'listing',     label: 'Listing',     className: 'max-w-[190px]' },
-  { key: 'contributor', label: 'Contributor', className: 'w-24 max-w-[95px]' },
-  { key: 'category',    label: 'Category',    className: 'w-px whitespace-nowrap' },
-  { key: 'location',    label: 'Location',    className: 'w-28 max-w-[110px]' },
-  { key: 'price',       label: 'Price',       className: 'w-24 whitespace-nowrap' },
-  { key: 'submitted',   label: 'Submitted',   className: 'w-20 whitespace-nowrap' },
-  { key: 'availability', label: 'Availability', className: 'w-px whitespace-nowrap' },
-  { key: 'status',      label: 'Status',      className: 'w-px whitespace-nowrap' },
-  { key: 'action',      label: 'Action',      className: 'w-px whitespace-nowrap text-right' },
+  { key: 'listing',      label: 'Listing',      className: 'min-w-[120px] max-w-[170px]' },
+  { key: 'contributor',  label: 'Contributor',  className: 'w-20 max-w-[80px]' },
+  { key: 'category',     label: 'Category',     className: 'w-24 whitespace-nowrap' },
+  { key: 'location',     label: 'Location',     className: 'w-24 max-w-[95px]' },
+  { key: 'price',        label: 'Price',        className: 'w-20 whitespace-nowrap' },
+  { key: 'submitted',    label: 'Submitted',    className: 'w-20 whitespace-nowrap' },
+  { key: 'availability', label: 'Availability', className: 'w-24 whitespace-nowrap' },
+  { key: 'status',       label: 'Status',       className: 'w-24 whitespace-nowrap' },
+  { key: 'action',       label: 'Action',       className: 'w-10 whitespace-nowrap text-right' },
 ];
 
 function renderListingRow(
@@ -53,7 +53,7 @@ function renderListingRow(
 
   return [
     /* Listing title + inline view link */
-    <td key="listing" className="max-w-[190px] overflow-hidden">
+    <td key="listing" className="min-w-[120px] max-w-[170px] overflow-hidden">
       <Link
         to={`/admin/listings/${l._type}/${l._id}`}
         state={{
@@ -67,13 +67,13 @@ function renderListingRow(
           onOpenListing?.(l);
         }}
         className={`group/link font-semibold hover:text-brand-blue transition-colors flex items-center gap-1.5 flex-nowrap min-w-0 ${
-          unseen ? 'text-brand-blue' : 'text-slate-800'
+          unseen ? 'text-brand-blue font-bold' : 'text-slate-800'
         }`}
       >
         <span
           onMouseEnter={(e) => onHoverItem?.(title, e.currentTarget)}
           onMouseLeave={() => onHoverItem?.(null)}
-          className="truncate block min-w-0 max-w-[190px] font-semibold text-xs text-slate-800 group-hover/link:text-brand-blue cursor-pointer"
+          className="truncate block min-w-0 max-w-[160px] font-semibold text-xs text-slate-800 group-hover/link:text-brand-blue cursor-pointer"
         >
           {title}
         </span>
@@ -81,43 +81,43 @@ function renderListingRow(
     </td>,
 
     /* Contributor */
-    <td key="contributor" className="text-slate-600 max-w-[95px] truncate text-xs" title={contributorName}>
-      <span className="truncate block max-w-[95px]">{contributorName || '—'}</span>
+    <td key="contributor" className="text-slate-600 max-w-[80px] truncate text-xs" title={contributorName}>
+      <span className="truncate block max-w-[80px]">{contributorName || '—'}</span>
     </td>,
 
     /* Category */
-    <td key="category" className="w-px whitespace-nowrap">
-      <CategoryBadge category={l._type || l.category} />
+    <td key="category" className="w-24 whitespace-nowrap">
+      <CategoryBadge category={l._type || l.category} compact />
     </td>,
 
     /* Location */
-    <td key="location" className="text-slate-600 max-w-[110px] truncate text-xs">
+    <td key="location" className="text-slate-500 max-w-[95px] truncate text-xs">
       <span
         onMouseEnter={(e) => onHoverItem?.(location, e.currentTarget)}
         onMouseLeave={() => onHoverItem?.(null)}
-        className="truncate block max-w-[110px] cursor-pointer hover:text-slate-900 transition-colors"
+        className="truncate block max-w-[95px] cursor-pointer hover:text-slate-800 transition-colors"
       >
         {location}
       </span>
     </td>,
 
     /* Price */
-    <td key="price" className="font-bold text-slate-800 whitespace-nowrap text-xs">
+    <td key="price" className="font-bold text-slate-800 whitespace-nowrap text-xs tabular-nums">
       {formatINR(l.price, { compact: true }) || '—'}
     </td>,
 
     /* Submitted */
-    <td key="submitted" className="text-slate-400 text-xs whitespace-nowrap">
+    <td key="submitted" className="text-slate-400 text-[11px] tabular-nums whitespace-nowrap">
       {formatDate(l.createdAt)}
     </td>,
 
     /* Availability */
-    <td key="availability" className="w-px whitespace-nowrap">
+    <td key="availability" className="w-24 whitespace-nowrap">
       <button
         type="button"
         onClick={handleToggle}
         disabled={updatingAvailability === l._id || updatingAvailability === l.id}
-        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border capitalize whitespace-nowrap shadow-xs transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-80 ${
+        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold border capitalize whitespace-nowrap shadow-2xs transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-80 ${
           isSoldOut
             ? 'bg-red-50 text-red-600 border-red-200/70 hover:bg-red-100'
             : 'bg-emerald-50 text-emerald-600 border-emerald-200/70 hover:bg-emerald-100'
@@ -144,16 +144,16 @@ function renderListingRow(
     </td>,
 
     /* Status */
-    <td key="status" className="w-px whitespace-nowrap">
+    <td key="status" className="w-24 whitespace-nowrap">
       <StatusBadge status={l.status} />
     </td>,
 
     /* Action (Delete) */
-    <td key="action" className="text-right w-px whitespace-nowrap">
+    <td key="action" className="text-right w-10 whitespace-nowrap">
       <button
         type="button"
         onClick={handleDelete}
-        className="inline-flex items-center justify-center h-6.5 w-6.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:border-rose-300 transition-colors"
+        className="inline-flex items-center justify-center h-6 w-6 rounded-md border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:border-rose-300 transition-colors shrink-0 cursor-pointer"
         title="Delete listing"
         aria-label="Delete listing"
       >
@@ -424,21 +424,34 @@ export default function ListingsTable({
   const effectivePage = filtered.length > 0 && page > totalPages ? totalPages : page;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-card overflow-hidden relative">
+    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden relative">
       {/* Search / filter bar */}
-      <div className="p-3 border-b border-slate-100/60">
-        <div className="flex items-center gap-2 flex-wrap">
-          <input
-            type="text"
-            placeholder="Search listings…"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 min-w-[160px] rounded-md border border-slate-200 py-1.5 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20 transition-all duration-150"
-          />
+      <div className="p-3 border-b border-slate-100 bg-white">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
+            <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
+            <input
+              type="text"
+              placeholder="Search by title, contributor, category or location…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 pl-8 pr-8 py-1.5 text-xs text-slate-800 placeholder-slate-400 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-blue/20 transition-all duration-150"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs cursor-pointer"
+                aria-label="Clear search"
+              >
+                <i className="fa-solid fa-xmark" />
+              </button>
+            )}
+          </div>
           <select
             value={normalizeCategoryKey(selectedCategory) || ''}
             onChange={(e) => handleCategoryChange(e.target.value)}
-            className="rounded-md border border-slate-200 py-1.5 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20 cursor-pointer"
+            className="rounded-xl border border-slate-200 py-1.5 px-3 text-xs bg-white text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-brand-blue/20 cursor-pointer shadow-2xs"
           >
             <option value="">All Categories</option>
             <option value="properties">Properties</option>

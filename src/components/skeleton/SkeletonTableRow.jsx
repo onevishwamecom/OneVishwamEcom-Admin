@@ -17,26 +17,25 @@ export function SkeletonTableRow({
   even = false,
 }) {
   return (
-    <tr className={`border-b border-slate-100 transition-colors ${even ? 'bg-slate-50/30' : 'bg-white'}`}>
+    <tr className={`border-b border-slate-100 transition-colors ${even ? 'bg-slate-50/40' : 'bg-white'}`}>
       {checkbox && (
-        <td className="px-3.5 py-2 w-10">
-          <Skeleton className="h-4 w-4" rounded="rounded" />
+        <td className="px-2 py-1.5 w-8">
+          <Skeleton className="h-3.5 w-3.5" rounded="rounded" />
         </td>
       )}
       {showIndex && (
-        <td className="px-3.5 py-2 text-center w-12">
-          <Skeleton className="h-3 w-4 mx-auto" rounded="rounded" />
+        <td className="px-1.5 py-1.5 text-center w-7">
+          <Skeleton className="h-3 w-3.5 mx-auto" rounded="rounded" />
         </td>
       )}
       {Array.from({ length: columns }).map((_, ci) => {
-        // Product column: thumbnail + title
+        // Product column: title
         if (ci === 0) {
           return (
-            <td key={ci} className="px-3.5 py-2">
-              <div className="flex items-center gap-2.5 min-w-[180px] max-w-[260px]">
-                <Skeleton className="w-8 h-8 rounded-lg shrink-0" />
+            <td key={ci} className="px-2 py-1.5">
+              <div className="flex items-center gap-2 min-w-[120px] max-w-[170px]">
                 <div className="min-w-0 flex-1 space-y-1">
-                  <Skeleton className="h-3 w-3/4" rounded="rounded" />
+                  <Skeleton className="h-3 w-4/5" rounded="rounded" />
                   <Skeleton className="h-2 w-1/2" rounded="rounded" />
                 </div>
               </div>
@@ -47,10 +46,10 @@ export function SkeletonTableRow({
         // Category column: icon badge + label
         if (ci === 1) {
           return (
-            <td key={ci} className="px-3.5 py-2">
-              <div className="flex items-center gap-2">
-                <Skeleton className="w-6 h-6 rounded-md shrink-0" />
-                <Skeleton className="h-3 w-16" rounded="rounded" />
+            <td key={ci} className="px-2 py-1.5">
+              <div className="flex items-center gap-1">
+                <Skeleton className="w-5 h-5 rounded shrink-0" />
+                <Skeleton className="h-3 w-14" rounded="rounded" />
               </div>
             </td>
           );
@@ -59,11 +58,8 @@ export function SkeletonTableRow({
         // Location column: pin + text
         if (ci === 2) {
           return (
-            <td key={ci} className="px-3.5 py-2">
-              <div className="flex items-center gap-1.5">
-                <Skeleton className="w-3 h-3 rounded-full shrink-0" />
-                <Skeleton className="h-3 w-24" rounded="rounded" />
-              </div>
+            <td key={ci} className="px-2 py-1.5">
+              <Skeleton className="h-3 w-16" rounded="rounded" />
             </td>
           );
         }
@@ -71,11 +67,8 @@ export function SkeletonTableRow({
         // Date column: clock + date
         if (ci === 3) {
           return (
-            <td key={ci} className="px-3.5 py-2">
-              <div className="flex items-center gap-1.5">
-                <Skeleton className="w-3 h-3 rounded-full shrink-0" />
-                <Skeleton className="h-3 w-20" rounded="rounded" />
-              </div>
+            <td key={ci} className="px-2 py-1.5">
+              <Skeleton className="h-3 w-14" rounded="rounded" />
             </td>
           );
         }
@@ -83,25 +76,22 @@ export function SkeletonTableRow({
         // Status column: pill
         if (ci === 4) {
           return (
-            <td key={ci} className="px-3.5 py-2">
-              <Skeleton className="h-5 w-18 rounded-full" />
+            <td key={ci} className="px-2 py-1.5">
+              <Skeleton className="h-4.5 w-14 rounded-full" />
             </td>
           );
         }
 
         // Generic fallback for any additional columns
         return (
-          <td key={ci} className="px-3.5 py-2">
-            <Skeleton className="h-3 w-1/2" rounded="rounded" />
+          <td key={ci} className="px-2 py-1.5">
+            <Skeleton className="h-3 w-12" rounded="rounded" />
           </td>
         );
       })}
       {action && (
-        <td className="px-3.5 py-2 text-right">
-          <div className="flex items-center justify-end gap-1.5">
-            <Skeleton className="h-7 w-7 rounded-lg shrink-0" />
-            <Skeleton className="h-7 w-7 rounded-lg shrink-0" />
-          </div>
+        <td className="px-2 py-1.5 text-right w-10">
+          <Skeleton className="h-6 w-6 rounded-md ml-auto shrink-0" />
         </td>
       )}
     </tr>
