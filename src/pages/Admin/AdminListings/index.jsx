@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import useAdminListings from './useAdminListings';
-import StatusTabs from './components/StatusTabs';
 import ListingsMetricsStrip from './components/ListingsMetricsStrip';
 import ListingsTable from './components/ListingsTable';
 import { PageContainer, PageHeader } from '../../../components/layout/PageContainer';
@@ -9,23 +8,16 @@ import { Skeleton, SkeletonTable, ErrorState } from '../../../components/skeleto
 
 function ListingsSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="space-y-2.5">
+    <div className="space-y-4">
+      <div className="space-y-2">
         <Skeleton className="h-7 w-40" rounded="rounded-lg" />
         <Skeleton className="h-4 w-64 max-w-full" rounded="rounded-md" />
       </div>
 
-      {/* Metrics strip skeleton */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-24 w-full" rounded="rounded-2xl" />
-        ))}
-      </div>
-
-      {/* Status tabs skeleton */}
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      {/* Unified filter cards skeleton */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-2.5">
         {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-9 w-24 shrink-0" rounded="rounded-full" />
+          <Skeleton key={i} className="h-16 w-full" rounded="rounded-xl" />
         ))}
       </div>
 
@@ -113,8 +105,6 @@ function AdminListings() {
       />
 
       <ListingsMetricsStrip counts={counts} activeTab={activeTab} onSelectTab={setActiveTab} />
-
-      <StatusTabs tabs={TABS} activeTab={activeTab} setActiveTab={setActiveTab} counts={counts} />
 
       {filtered.length === 0 ? (
         <EmptyState
