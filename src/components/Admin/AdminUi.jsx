@@ -246,6 +246,7 @@ export function DataTable({
   rows = [],
   renderRow,
   getRowClassName,
+  onRowClick,
   emptyIcon = 'fa-inbox',
   emptyTitle = 'No data',
   emptyMessage = '',
@@ -295,7 +296,7 @@ export function DataTable({
                     col.className || '',
                   ].join(' ')}
                 >
-                  {col.label}
+                  {col.header ? col.header(col) : col.label}
                 </th>
               ))}
             </tr>
@@ -316,8 +317,13 @@ export function DataTable({
                 return (
                   <tr
                     key={row._id || row.id || ri}
+                    onClick={(e) => {
+                      if (e.target.closest('button, a, input, select')) return;
+                      onRowClick && onRowClick(row, ri);
+                    }}
                     className={[
-                      'border-b border-slate-100 last:border-0 transition-colors cursor-default group hover:bg-blue-50/30',
+                      'border-b border-slate-100 last:border-0 transition-colors group hover:bg-blue-50/40',
+                      onRowClick ? 'cursor-pointer' : 'cursor-default',
                       rowBg,
                     ].join(' ')}
                   >

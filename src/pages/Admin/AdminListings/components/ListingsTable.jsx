@@ -1,23 +1,11 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { Link, useSearchParams, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { formatINR, formatDate } from '../../../../utils';
 import { StatusBadge, DataTable } from '../../../../components/Admin/AdminUi';
 import CategoryBadge, { normalizeCategoryKey } from '../../../../components/ui/CategoryBadge';
 import { adminApi } from '../../../../api/adminData';
-
-const COLUMNS = [
-  { key: 'listing',      label: 'Listing',      className: 'min-w-[120px] max-w-[170px]' },
-  { key: 'contributor',  label: 'Contributor',  className: 'w-20 max-w-[80px]' },
-  { key: 'category',     label: 'Category',     className: 'w-24 whitespace-nowrap' },
-  { key: 'location',     label: 'Location',     className: 'w-24 max-w-[95px]' },
-  { key: 'price',        label: 'Price',        className: 'w-20 whitespace-nowrap' },
-  { key: 'submitted',    label: 'Submitted',    className: 'w-20 whitespace-nowrap' },
-  { key: 'availability', label: 'Availability', className: 'w-24 whitespace-nowrap' },
-  { key: 'status',       label: 'Status',       className: 'w-24 whitespace-nowrap' },
-  { key: 'action',       label: 'Action',       className: 'w-10 whitespace-nowrap text-right' },
-];
 
 function renderListingRow(
   l,
@@ -148,17 +136,37 @@ function renderListingRow(
       <StatusBadge status={l.status} />
     </td>,
 
-    /* Action (Delete) */
-    <td key="action" className="text-right w-10 whitespace-nowrap">
-      <button
-        type="button"
-        onClick={handleDelete}
-        className="inline-flex items-center justify-center h-6 w-6 rounded-md border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:border-rose-300 transition-colors shrink-0 cursor-pointer"
-        title="Delete listing"
-        aria-label="Delete listing"
-      >
-        <i className="fa-solid fa-trash-can text-[10px]" aria-hidden="true" />
-      </button>
+    /* Action (View Details + Delete) */
+    <td key="action" className="text-right w-16 whitespace-nowrap">
+      <div className="inline-flex items-center justify-end gap-1">
+        <Link
+          to={`/admin/listings/${l._type}/${l._id || l.id}`}
+          state={{
+            fromPage: currentPage,
+            fromPath: routerLocation ? `${routerLocation.pathname}${routerLocation.search}` : undefined,
+          }}
+          onClick={() => {
+            try {
+              sessionStorage.setItem('admin_listings_page', String(currentPage));
+            } catch (e) {}
+            onOpenListing?.(l);
+          }}
+          className="inline-flex items-center justify-center h-6 w-6 rounded-md border border-slate-200 bg-slate-50 text-slate-600 hover:bg-brand-blue hover:text-white hover:border-brand-blue transition-colors shrink-0 cursor-pointer shadow-2xs"
+          title="View & Review details"
+          aria-label="View listing details"
+        >
+          <i className="fa-solid fa-arrow-up-right-from-square text-[10px]" aria-hidden="true" />
+        </Link>
+        <button
+          type="button"
+          onClick={handleDelete}
+          className="inline-flex items-center justify-center h-6 w-6 rounded-md border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-colors shrink-0 cursor-pointer shadow-2xs"
+          title="Delete listing"
+          aria-label="Delete listing"
+        >
+          <i className="fa-solid fa-trash-can text-[10px]" aria-hidden="true" />
+        </button>
+      </div>
     </td>,
   ];
 }
@@ -173,11 +181,105 @@ export default function ListingsTable({
   page: controlledPage,
   onPageChange: controlledOnPageChange,
 }) {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = React.useState('');
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = React.useState(() => searchParams.get('category') || '');
+  const [sortField, setSortField] = React.useState('submitted');
+  const [sortOrder, setSortOrder] = React.useState('desc');
   const location = useLocation();
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortOrder(field === 'title' ? 'asc' : 'desc');
+    }
+    setPage(1);
+  };
+
+  const columns = React.useMemo(
+    () => [
+      {
+        key: 'listing',
+        label: 'Listing',
+        className: 'min-w-[120px] max-w-[170px]',
+        header: () => (
+          <button
+            type="button"
+            onClick={() => handleSort('title')}
+            className="inline-flex items-center gap-1.5 font-bold uppercase tracking-wider text-slate-500 hover:text-brand-blue cursor-pointer select-none group/sort"
+            title="Sort by Title"
+          >
+            <span>Listing</span>
+            <i
+              className={`text-[9px] ${
+                sortField === 'title'
+                  ? 'text-brand-blue ' + (sortOrder === 'asc' ? 'fa-solid fa-arrow-up' : 'fa-solid fa-arrow-down')
+                  : 'text-slate-300 group-hover/sort:text-slate-400 fa-solid fa-sort'
+              }`}
+              aria-hidden="true"
+            />
+          </button>
+        ),
+      },
+      { key: 'contributor',  label: 'Contributor',  className: 'w-20 max-w-[80px]' },
+      { key: 'category',     label: 'Category',     className: 'w-24 whitespace-nowrap' },
+      { key: 'location',     label: 'Location',     className: 'w-24 max-w-[95px]' },
+      {
+        key: 'price',
+        label: 'Price',
+        className: 'w-20 whitespace-nowrap',
+        header: () => (
+          <button
+            type="button"
+            onClick={() => handleSort('price')}
+            className="inline-flex items-center gap-1.5 font-bold uppercase tracking-wider text-slate-500 hover:text-brand-blue cursor-pointer select-none group/sort"
+            title="Sort by Price"
+          >
+            <span>Price</span>
+            <i
+              className={`text-[9px] ${
+                sortField === 'price'
+                  ? 'text-brand-blue ' + (sortOrder === 'asc' ? 'fa-solid fa-arrow-up' : 'fa-solid fa-arrow-down')
+                  : 'text-slate-300 group-hover/sort:text-slate-400 fa-solid fa-sort'
+              }`}
+              aria-hidden="true"
+            />
+          </button>
+        ),
+      },
+      {
+        key: 'submitted',
+        label: 'Submitted',
+        className: 'w-20 whitespace-nowrap',
+        header: () => (
+          <button
+            type="button"
+            onClick={() => handleSort('submitted')}
+            className="inline-flex items-center gap-1.5 font-bold uppercase tracking-wider text-slate-500 hover:text-brand-blue cursor-pointer select-none group/sort"
+            title="Sort by Date Submitted"
+          >
+            <span>Submitted</span>
+            <i
+              className={`text-[9px] ${
+                sortField === 'submitted'
+                  ? 'text-brand-blue ' + (sortOrder === 'asc' ? 'fa-solid fa-arrow-up' : 'fa-solid fa-arrow-down')
+                  : 'text-slate-300 group-hover/sort:text-slate-400 fa-solid fa-sort'
+              }`}
+              aria-hidden="true"
+            />
+          </button>
+        ),
+      },
+      { key: 'availability', label: 'Availability', className: 'w-24 whitespace-nowrap' },
+      { key: 'status',       label: 'Status',       className: 'w-24 whitespace-nowrap' },
+      { key: 'action',       label: 'Action',       className: 'w-16 whitespace-nowrap text-right' },
+    ],
+    [sortField, sortOrder],
+  );
 
   React.useEffect(() => {
     const cat = searchParams.get('category') || '';
@@ -420,8 +522,47 @@ export default function ListingsTable({
     }
   };
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
-  const effectivePage = filtered.length > 0 && page > totalPages ? totalPages : page;
+  const sortedAndFiltered = React.useMemo(() => {
+    const list = [...filtered];
+    if (!sortField) return list;
+
+    return list.sort((a, b) => {
+      let diff = 0;
+      if (sortField === 'title') {
+        const titleA = (a.title || a.brand || '').toLowerCase();
+        const titleB = (b.title || b.brand || '').toLowerCase();
+        diff = titleA.localeCompare(titleB);
+      } else if (sortField === 'price') {
+        const priceA = Number(a.price) || 0;
+        const priceB = Number(b.price) || 0;
+        diff = priceA - priceB;
+      } else if (sortField === 'submitted') {
+        const dateA = new Date(a.createdAt || 0).getTime();
+        const dateB = new Date(b.createdAt || 0).getTime();
+        diff = dateA - dateB;
+      }
+      return sortOrder === 'asc' ? diff : -diff;
+    });
+  }, [filtered, sortField, sortOrder]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedAndFiltered.length / rowsPerPage));
+  const effectivePage = sortedAndFiltered.length > 0 && page > totalPages ? totalPages : page;
+
+  const handleRowClick = React.useCallback(
+    (l) => {
+      try {
+        sessionStorage.setItem('admin_listings_page', String(effectivePage));
+      } catch (e) {}
+      onOpenListing?.(l);
+      navigate(`/admin/listings/${l._type}/${l._id || l.id}`, {
+        state: {
+          fromPage: effectivePage,
+          fromPath: location ? `${location.pathname}${location.search}` : undefined,
+        },
+      });
+    },
+    [effectivePage, onOpenListing, navigate, location],
+  );
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden relative">
@@ -469,11 +610,12 @@ export default function ListingsTable({
 
       {/* Table */}
       <DataTable
-        columns={COLUMNS}
-        rows={filtered}
+        columns={columns}
+        rows={sortedAndFiltered}
         page={effectivePage}
         rowsPerPage={rowsPerPage}
         onPageChange={setPage}
+        onRowClick={handleRowClick}
         renderRow={(l) =>
           renderListingRow(
             l,

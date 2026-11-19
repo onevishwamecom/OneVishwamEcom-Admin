@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import useAdminListings from './useAdminListings';
 import StatusTabs from './components/StatusTabs';
+import ListingsMetricsStrip from './components/ListingsMetricsStrip';
 import ListingsTable from './components/ListingsTable';
 import { PageContainer, PageHeader } from '../../../components/layout/PageContainer';
 import { EmptyState } from '../../../components/Admin/AdminUi';
@@ -12,6 +13,13 @@ function ListingsSkeleton() {
       <div className="space-y-2.5">
         <Skeleton className="h-7 w-40" rounded="rounded-lg" />
         <Skeleton className="h-4 w-64 max-w-full" rounded="rounded-md" />
+      </div>
+
+      {/* Metrics strip skeleton */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-24 w-full" rounded="rounded-2xl" />
+        ))}
       </div>
 
       {/* Status tabs skeleton */}
@@ -103,6 +111,8 @@ function AdminListings() {
           ) : null
         }
       />
+
+      <ListingsMetricsStrip counts={counts} activeTab={activeTab} onSelectTab={setActiveTab} />
 
       <StatusTabs tabs={TABS} activeTab={activeTab} setActiveTab={setActiveTab} counts={counts} />
 
