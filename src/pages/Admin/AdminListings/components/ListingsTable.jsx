@@ -69,12 +69,12 @@ function renderListingRow(
     </td>,
 
     /* Contributor */
-    <td key="contributor" className="text-slate-600 max-w-[80px] truncate text-xs" title={contributorName}>
-      <span className="truncate block max-w-[80px]">{contributorName || '—'}</span>
+    <td key="contributor" className="text-slate-600 min-w-[120px] max-w-[150px] truncate text-xs" title={contributorName}>
+      <span className="truncate block max-w-[140px]">{contributorName || '—'}</span>
     </td>,
 
     /* Category */
-    <td key="category" className="w-24 whitespace-nowrap">
+    <td key="category" className="min-w-[105px] w-28 whitespace-nowrap">
       <CategoryBadge category={l._type || l.category} compact />
     </td>,
 
@@ -205,8 +205,8 @@ export default function ListingsTable({
           </button>
         ),
       },
-      { key: 'contributor',  label: 'Contributor',  className: 'w-20 max-w-[80px]' },
-      { key: 'category',     label: 'Category',     className: 'w-24 whitespace-nowrap' },
+      { key: 'contributor',  label: 'Contributor',  className: 'min-w-[120px] w-32 whitespace-nowrap' },
+      { key: 'category',     label: 'Category',     className: 'min-w-[105px] w-28 whitespace-nowrap' },
       { key: 'location',     label: 'Location',     className: 'w-24 max-w-[95px]' },
       {
         key: 'price',

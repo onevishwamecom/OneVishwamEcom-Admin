@@ -1,6 +1,7 @@
 import React from 'react';
 import { formatDate } from '../../../../utils';
 import { Skeleton } from '../../../../components/skeleton';
+import { Pagination } from '../../../../components/Admin/AdminUi';
 
 export default function TemplateDownloadLogsTab({
   logsData = { logs: [], total: 0, page: 1, pages: 1 },
@@ -135,30 +136,13 @@ export default function TemplateDownloadLogsTab({
         )}
 
         {/* Pagination */}
-        {logsData.pages > 1 && (
-          <div className="px-4 py-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
-            <p className="text-xs text-slate-500">
-              Page {logsData.page} of {logsData.pages} ({logsData.total} logs)
-            </p>
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setLogPage((p) => Math.max(1, p - 1))}
-                disabled={logPage <= 1}
-                className="px-3 py-1 text-xs font-bold rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
-              >
-                Previous
-              </button>
-              <button
-                type="button"
-                onClick={() => setLogPage((p) => Math.min(logsData.pages, p + 1))}
-                disabled={logPage >= logsData.pages}
-                className="px-3 py-1 text-xs font-bold rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
-              >
-                Next
-              </button>
-            </div>
-          </div>
+        {logsData.total > 0 && (
+          <Pagination
+            total={logsData.total}
+            page={logsData.page || logPage || 1}
+            rowsPerPage={15}
+            onPageChange={setLogPage}
+          />
         )}
       </div>
     </div>

@@ -235,20 +235,79 @@ async function getCategories() {
   });
 }
 
+export function getListingTitle(item) {
+  if (!item) return 'Untitled listing';
+  const candidate =
+    item.title ||
+    item.listingTitle ||
+    item.productName ||
+    item.name ||
+    (item.brand && (item.model || item.name) ? `${item.brand} ${item.model || item.name}` : '') ||
+    item.brand ||
+    item.model ||
+    item.itemName ||
+    item.serviceName;
+  if (typeof candidate === 'string' && candidate.trim()) {
+    return candidate.trim();
+  }
+  return 'Untitled listing';
+}
+
+function getListingAction(status) {
+  const s = String(status || '').toLowerCase().trim();
+  if (s === 'approved') return 'approved';
+  if (s === 'changes-required' || s === 'changes_required' || s === 'changes-requested') return 'changes-requested';
+  if (s === 'cancelled' || s === 'rejected') return 'cancelled';
+  if (s === 'pending') return 'pending';
+  if (s === 'price-updated') return 'price-updated';
+  return s || 'submitted';
+}
+
 async function getActivity() {
   return dedupe('activity', async () => {
-    const items = await getListings();
+    const [items, contributors] = await Promise.all([
+      getListings(),
+      getContributors().catch(() => []),
+    ]);
+
+    const contributorMap = new Map();
+    for (const c of contributors) {
+      const id = String(c._id || c.id || '');
+      if (id && c.name) contributorMap.set(id, c.name);
+      if (c.email && c.name) contributorMap.set(c.email.toLowerCase(), c.name);
+    }
+
     return items
-      .map((item) => ({
-        _id: item._id,
-        _type: item._type,
-        title: item.title || 'Untitled',
-        status: item.status,
-        contributorName: item.lister?.name || 'Unknown',
-        createdAt: item.createdAt,
-        updatedAt: item.updatedAt,
-      }))
-      .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
+      .map((item) => {
+        const title = getListingTitle(item);
+        const action = getListingAction(item.status);
+        const contributorName =
+          (item.contributorId && contributorMap.get(String(item.contributorId))) ||
+          (item.contributor?.name && item.contributor.name !== 'Contributor' ? item.contributor.name : null) ||
+          (item.lister?.name && item.lister.name !== 'Contributor' ? item.lister.name : null) ||
+          (item.contributor?.email && contributorMap.get(item.contributor.email.toLowerCase())) ||
+          (item.lister?.email && contributorMap.get(item.lister.email.toLowerCase())) ||
+          item.channelPartnerName ||
+          item.vendorName ||
+          item.contributor?.name ||
+          item.lister?.name ||
+          'OneVishwam';
+        const note = item.reviewNotes || item.rejectionReason || item.moderationNotes || item.moderationNote || item.comments || item.note || '';
+
+        return {
+          _id: item._id || item.id,
+          _type: item._type,
+          title,
+          listingTitle: title,
+          action,
+          status: item.status || 'submitted',
+          contributorName,
+          note,
+          createdAt: item.updatedAt || item.createdAt || new Date().toISOString(),
+          updatedAt: item.updatedAt,
+        };
+      })
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   });
 }
 
