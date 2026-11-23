@@ -1,6 +1,7 @@
 import client from './client';
 import cache, { adminNamespace, clearInflight } from '../services/cache/cacheService';
 import { CATEGORIES } from '../mock/categories';
+import { getCachedCategories, fetchCategories } from '../services/categoriesService';
 
 const inFlight = new Map();
 
@@ -218,9 +219,11 @@ async function getListing(type, id) {
 }
 
 async function getCategories() {
+  fetchCategories().catch(() => {});
+  const categoriesList = getCachedCategories();
   const stats = await getStats();
   const byType = stats?.byCategory || {};
-  return CATEGORIES.map((category) => {
+  return (categoriesList && categoriesList.length > 0 ? categoriesList : CATEGORIES).map((category) => {
     const canonical = listingType(category.id);
     const catStats = byType[category.id] || (canonical && canonical !== category.id ? byType[canonical] : null) || {};
     return {
