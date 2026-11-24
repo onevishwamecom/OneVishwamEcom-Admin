@@ -1,7 +1,12 @@
 node_modules/
 dist/
+# Environment files are local-only. Keep the template tracked.
 .env
 .env.*
+# Explicit entries (already covered by the glob above, kept so intent is obvious)
+.env.production
+.env.development
+!.env.example
 .env.local
 .env.*.local
 *.log

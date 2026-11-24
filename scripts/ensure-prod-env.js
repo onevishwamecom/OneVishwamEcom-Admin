@@ -1,3 +1,6 @@
+// Keeps the production API URL pinned in the local environment files before a
+// build/deploy. `.env` and `.env.production` are gitignored, local-only files —
+// this script updates them in place, it never adds them to the repository.
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
